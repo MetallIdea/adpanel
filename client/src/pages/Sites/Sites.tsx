@@ -1,21 +1,9 @@
-import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SitesList } from '../../components/Sites/SitesList'
 import { Button } from 'primereact/button'
-import { useDispatch } from 'react-redux'
-import { useGetSitesQuery } from '../../services/sitesApi'
-import { fetchSitesSuccess } from '../../store/sites/sitesSlice'
 
 export default function Sites() {
   const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const { data } = useGetSitesQuery()
-
-  useEffect(() => {
-    if (data) {
-      dispatch(fetchSitesSuccess(data))
-    }
-  }, [data, dispatch])
 
   const handleCreateClick = () => {
     navigate('/sites/create')

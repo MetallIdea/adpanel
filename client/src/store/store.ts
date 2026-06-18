@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { sitesReducer } from './sites/sitesSlice'
+import { sitesReducer } from './sitesSlice'
 import { sitesApi } from '../services/sitesApi'
 
 export const store = configureStore({

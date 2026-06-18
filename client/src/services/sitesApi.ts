@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { Site } from '../store/sites/sitesSlice'
+import type { Site } from '../store/sitesSlice'
 
 const API_BASE_URL = 'http://localhost:3000/api'
 

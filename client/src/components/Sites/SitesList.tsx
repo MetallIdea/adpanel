@@ -2,10 +2,9 @@ import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { Card } from 'primereact/card'
 import { Badge } from 'primereact/badge'
-import { useSelector } from 'react-redux'
-import type { RootState } from '../../store/store'
+import { useGetSitesQuery } from '../../services/sitesApi'
 
-interface Site {
+type Site = {
   id: number
   name: string
   url: string
@@ -14,8 +13,7 @@ interface Site {
 }
 
 export function SitesList() {
-  const sites = useSelector((state: RootState) => state.sites.sites)
-  const loading = useSelector((state: RootState) => state.sites.loading)
+  const { data, isLoading } = useGetSitesQuery()
 
   const statusBodyTemplate = (site: Site) => {
     const statusColors = {
@@ -32,7 +30,7 @@ export function SitesList() {
   return (
     <div className="p-4">
       <Card title="Сайты" className="max-w-4xl mx-auto">
-        <DataTable value={sites} loading={loading}>
+        <DataTable value={data} loading={isLoading}>
           <Column field="id" header="ID" style={{ width: '80px' }}></Column>
           <Column field="name" header="Название"></Column>
           <Column field="url" header="URL"></Column>

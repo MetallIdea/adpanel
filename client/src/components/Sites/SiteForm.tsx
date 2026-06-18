@@ -5,13 +5,13 @@ import { InputText } from 'primereact/inputtext'
 import { Dropdown } from 'primereact/dropdown'
 import { Button } from 'primereact/button'
 
-export interface SiteFormValues {
+export type SiteFormValues = {
   name: string
   url: string
   status: 'active' | 'inactive' | 'pending'
 }
 
-interface SiteFormProps {
+type SiteFormProps = {
   onSubmit: (values: SiteFormValues) => void
   onCancel: () => void
   loading?: boolean
