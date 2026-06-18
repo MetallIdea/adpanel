@@ -1,7 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { Site } from '../store/sitesSlice'
-
-const API_BASE_URL = 'http://localhost:3000/api'
+import { API_BASE_URL } from '../constants/api'
 
 export const sitesApi = createApi({
   reducerPath: 'sitesApi',
