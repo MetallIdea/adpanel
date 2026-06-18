@@ -1,6 +1,9 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/MetallIdea/adpanel/server/internal/website"
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
 	r := gin.Default()
@@ -11,9 +14,7 @@ func main() {
 		})
 	})
 
-	r.GET("/sites", func(c *gin.Context) {
-		c.JSON(200, []map[string]string{})
-	})
+	r.GET("/sites", website.GetSites)
 
 	r.Run(":8080")
 }
