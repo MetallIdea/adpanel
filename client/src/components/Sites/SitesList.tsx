@@ -2,7 +2,8 @@ import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { Card } from 'primereact/card'
 import { Badge } from 'primereact/badge'
-import { get } from '../../utils/requests'
+import { useSelector } from 'react-redux'
+import type { RootState } from '../../store/store'
 
 interface Site {
   id: number
@@ -12,15 +13,10 @@ interface Site {
   visits: number
 }
 
-const sitesData: Site[] = [
-  { id: 1, name: 'Main Site', url: 'https://example.com', status: 'active', visits: 12500 },
-  { id: 2, name: 'Blog', url: 'https://blog.example.com', status: 'active', visits: 8300 },
-  { id: 3, name: 'Admin Panel', url: 'https://admin.example.com', status: 'inactive', visits: 2100 },
-  { id: 4, name: 'Documentation', url: 'https://docs.example.com', status: 'pending', visits: 5600 },
-  { id: 5, name: 'API Gateway', url: 'https://api.example.com', status: 'active', visits: 45000 },
-]
-
 export function SitesList() {
+  const sites = useSelector((state: RootState) => state.sites.sites)
+  const loading = useSelector((state: RootState) => state.sites.loading)
+
   const statusBodyTemplate = (site: Site) => {
     const statusColors = {
       active: 'p-success',
@@ -36,7 +32,7 @@ export function SitesList() {
   return (
     <div className="p-4">
       <Card title="Сайты" className="max-w-4xl mx-auto">
-        <DataTable value={sitesData} loading={true}>
+        <DataTable value={sites} loading={loading}>
           <Column field="id" header="ID" style={{ width: '80px' }}></Column>
           <Column field="name" header="Название"></Column>
           <Column field="url" header="URL"></Column>
