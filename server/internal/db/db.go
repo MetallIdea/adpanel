@@ -5,11 +5,17 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/joho/godotenv"
 )
 
 var DB *pgx.Conn
 
 func Init() error {
+	err := godotenv.Load()
+	if err != nil {
+		return err
+	}
+
 	connStr :=
 		"postgresql://" +
 			os.Getenv("POSTGRES_USER") + ":" +
