@@ -16,14 +16,7 @@ func Init() error {
 		return err
 	}
 
-	connStr :=
-		"postgresql://" +
-			os.Getenv("POSTGRES_USER") + ":" +
-			os.Getenv("POSTGRES_PASSWORD") + "@" +
-			os.Getenv("POSTGRES_HOST") + ":" +
-			os.Getenv("POSTGRES_PORT") + "/" +
-			os.Getenv("POSTGRES_DB") +
-			"?sslmode=disable"
+	connStr := os.Getenv("POSTGRES_URL")
 
 	conn, err := pgx.Connect(context.Background(), connStr)
 	if err != nil {
