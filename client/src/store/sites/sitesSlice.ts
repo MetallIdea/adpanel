@@ -60,4 +60,4 @@ export const {
   deleteSite,
 } = sitesSlice.actions
 
-export const sitesReducer = sitesSlice.reducer;
+export const sitesReducer = sitesSlice.reducer

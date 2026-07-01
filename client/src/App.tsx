@@ -4,6 +4,7 @@ import { Layout } from './components/Layout/Layout'
 
 const Home = lazy(() => import('./pages/Home/Home'))
 const Sites = lazy(() => import('./pages/Sites/Sites'))
+const CreateSite = lazy(() => import('./pages/Sites/CreateSite'))
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/sites" element={<Sites />} />
+          <Route path="/sites/create" element={<CreateSite />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
