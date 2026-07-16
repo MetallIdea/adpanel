@@ -19,3 +19,17 @@ func GenerateToken(login string) (string, error) {
 
 	return token.SignedString(secret)
 }
+
+func ValidateToken(tokenString string) error {
+	secret := []byte(os.Getenv("SECRET_KEY"))
+
+	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return secret, nil
+	})
+
+	if err != nil {
+		println(err.Error())
+	}
+
+	return err
+}
