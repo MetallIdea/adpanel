@@ -18,9 +18,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
       command: () => navigate('/sites'),
     },
     {
+      label: 'Файлы',
+      icon: 'pi pi-file',
+      command: () => navigate('/files'),
+    },
+    {
       label: 'Профиль',
       icon: 'pi pi-user',
       command: () => navigate('/profile'),
+    },
+    {
+      label: 'Вход',
+      icon: 'pi pi-sign-in',
+      command: () => navigate('/login'),
     },
   ]
 

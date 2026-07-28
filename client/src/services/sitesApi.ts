@@ -9,6 +9,9 @@ export const sitesApi = createApi({
     getSites: builder.query<Site[], void>({
       query: () => '/sites',
     }),
+    getSiteById: builder.query<Site, number>({
+    query: (id) => `/api/sites/${id}`,
+  }),
     addSite: builder.mutation<Site, Omit<Site, 'id' | 'visits'>>({
       query: (site) => ({
         url: '/sites',
@@ -20,4 +23,4 @@ export const sitesApi = createApi({
   tagTypes: ['Site'],
 })
 
-export const { useGetSitesQuery, useAddSiteMutation } = sitesApi
+export const { useGetSitesQuery, useGetSiteByIdQuery, useAddSiteMutation } = sitesApi
