@@ -1,25 +1,25 @@
 import { useNavigate } from 'react-router-dom'
-import { SitesList } from '../../components/Sites/SitesList'
+import { ServicesList } from '../../components/Services/ServicesList'
 import { Button } from 'primereact/button'
 
-export default function Sites() {
+export default function Services() {
   const navigate = useNavigate()
 
   const handleCreateClick = () => {
-    navigate('/sites/create')
+    navigate('/services/create')
   }
 
   return (
     <div className="p-4">
       <div className="flex justify-content-between align-items-center mb-4">
-        <h1>Управление сайтами</h1>
+        <h1>Управление сервисами</h1>
         <Button
-          label="Создать сайт"
+          label="Создать сервис"
           icon="pi pi-plus"
           onClick={handleCreateClick}
         />
       </div>
-      <SitesList />
+      <ServicesList />
     </div>
   )
 }

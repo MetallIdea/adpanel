@@ -1,7 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { Site } from '../store/sites/sitesSlice'
-
-const API_BASE_URL = 'http://localhost:3000/api'
+import type { Site } from '../store/sitesSlice'
+import { API_BASE_URL } from '../constants/api'
 
 export const sitesApi = createApi({
   reducerPath: 'sitesApi',
@@ -10,6 +9,9 @@ export const sitesApi = createApi({
     getSites: builder.query<Site[], void>({
       query: () => '/sites',
     }),
+    getSiteById: builder.query<Site, number>({
+    query: (id) => `/api/sites/${id}`,
+  }),
     addSite: builder.mutation<Site, Omit<Site, 'id' | 'visits'>>({
       query: (site) => ({
         url: '/sites',
@@ -21,4 +23,4 @@ export const sitesApi = createApi({
   tagTypes: ['Site'],
 })
 
-export const { useGetSitesQuery, useAddSiteMutation } = sitesApi
+export const { useGetSitesQuery, useGetSiteByIdQuery, useAddSiteMutation } = sitesApi

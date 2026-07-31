@@ -5,14 +5,14 @@ import { InputText } from 'primereact/inputtext'
 import { Dropdown } from 'primereact/dropdown'
 import { Button } from 'primereact/button'
 
-export type SiteFormValues = {
-  name: string
-  url: string
+export type ServiceFormValues = {
+  title: string
+  description: string
   status: 'active' | 'inactive' | 'pending'
 }
 
-type SiteFormProps = {
-  onSubmit: (values: SiteFormValues) => void
+type ServiceFormProps = {
+  onSubmit: (values: ServiceFormValues) => void
   onCancel: () => void
   loading?: boolean
 }
@@ -24,29 +24,28 @@ const statusOptions = [
 ]
 
 const validationSchema = Yup.object({
-  name: Yup.string()
+  title: Yup.string()
     .required('Название обязательно')
     .min(3, 'Минимум 3 символа'),
-  url: Yup.string()
-    .required('URL обязателен')
-    .url('Неверный формат URL'),
+  description: Yup.string()
+    .optional(),
   status: Yup.string()
     .required('Статус обязателен')
     .oneOf(['active', 'inactive', 'pending']),
 })
 
-export function SiteForm({ onSubmit, onCancel, loading = false }: SiteFormProps) {
-  const handleSubmit = (values: SiteFormValues, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
+export function ServiceForm({ onSubmit, onCancel, loading = false }: ServiceFormProps) {
+  const handleSubmit = (values: ServiceFormValues, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
     onSubmit(values)
     setSubmitting(false)
   }
 
   return (
-    <Card title="Создание сайта" className="max-w-2xl mx-auto">
+    <Card title="Создание сервиса" className="max-w-2xl mx-auto">
       <Formik
         initialValues={{
-          name: '',
-          url: '',
+          title: '',
+          description: '',
           status: 'active',
         }}
         validationSchema={validationSchema}
@@ -55,17 +54,17 @@ export function SiteForm({ onSubmit, onCancel, loading = false }: SiteFormProps)
         {({ isSubmitting, dirty, isValid }) => (
           <Form className="p-fluid">
             <div className="p-field mb-4">
-              <label htmlFor="name" className="p-label">
+              <label htmlFor="title" className="p-label">
                 Название
               </label>
               <Field
-                id="name"
-                name="name"
+                id="title"
+                name="title"
                 component={InputText}
                 className="w-full"
               />
               <ErrorMessage
-                name="name"
+                name="title"
                 component={() => (
                   <small className="p-error block mt-1">Название обязательно</small>
                 )}
@@ -73,21 +72,14 @@ export function SiteForm({ onSubmit, onCancel, loading = false }: SiteFormProps)
             </div>
 
             <div className="p-field mb-4">
-              <label htmlFor="url" className="p-label">
-                URL
+              <label htmlFor="description" className="p-label">
+                Описание
               </label>
               <Field
-                id="url"
-                name="url"
+                id="description"
+                name="description"
                 component={InputText}
                 className="w-full"
-                placeholder="https://example.com"
-              />
-              <ErrorMessage
-                name="url"
-                component={() => (
-                  <small className="p-error block mt-1">Неверный формат URL</small>
-                )}
               />
             </div>
 
