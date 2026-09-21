@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/MetallIdea/adpanel/server/internal/auth"
+	"github.com/MetallIdea/adpanel/server/internal/command"
 	"github.com/MetallIdea/adpanel/server/internal/db"
 	"github.com/MetallIdea/adpanel/server/internal/webservice"
 	"github.com/MetallIdea/adpanel/server/internal/website"
@@ -14,17 +16,28 @@ func setupRouter() *gin.Engine {
 	serviceRepo := webservice.NewRepository(db.DB)
 	serviceHandler := webservice.NewHandler(serviceRepo)
 
+	authHandler := auth.NewHandler()
+
+	commandHandler := command.NewHandler()
+
 	r := gin.Default()
 
-	r.GET("/sites", siteHandler.GetSites)
-	r.GET("/sites/:id", siteHandler.GetSiteByID)
-	r.GET("/sites/:id/services", serviceHandler.GetServicesBySiteID)
-	r.POST("/sites", siteHandler.CreateSite)
-	r.PUT("/sites/:id", siteHandler.UpdateSite)
-	r.DELETE("/sites/:id", siteHandler.DeleteSite)
+	authorized := r.Group("/")
+	authorized.Use(auth.AuthMiddleware())
 
-	r.GET("/services", serviceHandler.GetServices)
-	r.POST("/services", serviceHandler.CreateService)
+	authorized.GET("/sites", siteHandler.GetSites)
+	authorized.GET("/sites/:id", siteHandler.GetSiteByID)
+	authorized.GET("/sites/:id/services", serviceHandler.GetServicesBySiteID)
+	authorized.POST("/sites", siteHandler.CreateSite)
+	authorized.PUT("/sites/:id", siteHandler.UpdateSite)
+	authorized.DELETE("/sites/:id", siteHandler.DeleteSite)
+
+	authorized.GET("/services", serviceHandler.GetServices)
+	authorized.POST("/services", serviceHandler.CreateService)
+
+	r.POST("/api/login", authHandler.Login)
+
+	authorized.POST("/execute", commandHandler.Execute)
 
 	return r
 }
