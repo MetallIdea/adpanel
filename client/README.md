@@ -5,4 +5,6 @@
 
 **Локальный запуск**
 
+Установить в .env.local VITE_API_BASE_URL=https://localhost:3000/api
+
 npm run dev

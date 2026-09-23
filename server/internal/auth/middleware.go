@@ -2,35 +2,22 @@ package auth
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		token := c.GetHeader("Authorization")
-
-		if token == "" {
+		token, err := c.Cookie("jwt_token")
+		if err != nil || token == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "missing authorization header",
+				"error": "missing or invalid cookie",
 			})
 			c.Abort()
 			return
 		}
 
-		if !strings.HasPrefix(token, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid authorization header",
-			})
-			c.Abort()
-			return
-		}
-
-		token = strings.TrimPrefix(token, "Bearer ")
-
-		err := ValidateToken(token)
+		err = ValidateToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "invalid token",
