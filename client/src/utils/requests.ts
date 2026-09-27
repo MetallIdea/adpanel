@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api'
+import { API_BASE_URL } from "../constants/api"
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>

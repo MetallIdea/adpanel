@@ -22,7 +22,7 @@ func SetupRouter() *gin.Engine {
 
 	r := gin.Default()
 
-	authorized := r.Group("/")
+	authorized := r.Group("/api")
 	authorized.Use(auth.AuthMiddleware())
 
 	authorized.GET("/sites", siteHandler.GetSites)
