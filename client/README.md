@@ -5,6 +5,8 @@
 
 **Локальный запуск**
 
-Установить в .env.local VITE_API_BASE_URL=https://localhost:8080/api
+Установить в .env.local:
+
+VITE_API_BASE_URL=/api
 
 npm run dev
