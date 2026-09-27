@@ -22,7 +22,7 @@ client/
 └── .gitignore
 
 ## Переменные окружения (.env)
-REACT_APP_API_BASE_URL=https://api.example.com  # по умолчанию
+VITE_API_BASE_URL=https://api.example.com  # по умолчанию
 
 В .env.local переопределяется для локальной разработки
 

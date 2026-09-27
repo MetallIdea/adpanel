@@ -5,18 +5,16 @@ import { login } from '../../services/authApi'
 import styles from './Login.module.css'
 
 interface LoginFormValues {
-  email: string
+  login: string
   password: string
 }
 
 const validationSchema = yup.object({
-  email: yup
+  login: yup
     .string()
-    .email('Введите корректный email')
     .required('Email обязателен'),
   password: yup
     .string()
-    .min(6, 'Пароль должен содержать минимум 6 символов')
     .required('Пароль обязателен'),
 })
 
@@ -52,7 +50,7 @@ export default function Login() {
         <h1 className={styles.title}>Вход в систему</h1>
 
         <Formik
-          initialValues={{ email: '', password: '' }}
+          initialValues={{ login: '', password: '' }}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
         >
@@ -61,19 +59,18 @@ export default function Login() {
               {error && <div className={styles.errorText}>{error}</div>}
 
               <div className={styles.field}>
-                <label htmlFor="email" className={styles.label}>
-                  Email
+                <label htmlFor="login" className={styles.label}>
+                  Login
                 </label>
                 <Field
-                  id="email"
-                  name="email"
-                  type="email"
-                  className={`${styles.input} ${errors.email && touched.email ? styles.inputError : ''
+                  id="login"
+                  name="login"
+                  className={`${styles.input} ${errors.login && touched.login ? styles.inputError : ''
                     }`}
                   placeholder="example@mail.com"
                 />
-                {errors.email && touched.email && (
-                  <span className={styles.error}>{errors.email}</span>
+                {errors.login && touched.login && (
+                  <span className={styles.error}>{errors.login}</span>
                 )}
               </div>
 
@@ -86,8 +83,8 @@ export default function Login() {
                   name="password"
                   type="password"
                   className={`${styles.input} ${errors.password && touched.password
-                      ? styles.inputError
-                      : ''
+                    ? styles.inputError
+                    : ''
                     }`}
                   placeholder="••••••••"
                 />
