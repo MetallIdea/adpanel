@@ -1,14 +1,14 @@
 package db
 
 import (
-	"context"
+	"database/sql"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/joho/godotenv"
 )
 
-var DB *pgx.Conn
+var DB *sql.DB
 
 func Init() error {
 	err := godotenv.Load()
@@ -16,10 +16,17 @@ func Init() error {
 		return err
 	}
 
-	connStr := os.Getenv("POSTGRES_URL")
+	dbPath := os.Getenv("DATABASE_PATH")
+	if dbPath == "" {
+		dbPath = "adpanel.db"
+	}
 
-	conn, err := pgx.Connect(context.Background(), connStr)
+	conn, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
+		return err
+	}
+
+	if err = conn.Ping(); err != nil {
 		return err
 	}
 

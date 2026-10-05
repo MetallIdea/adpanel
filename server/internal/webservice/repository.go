@@ -2,20 +2,19 @@ package webservice
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5"
+	"database/sql"
 )
 
 type Repository struct {
-	db *pgx.Conn
+	db *sql.DB
 }
 
-func NewRepository(db *pgx.Conn) *Repository {
+func NewRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
 func (r *Repository) GetAll(ctx context.Context) ([]WebService, error) {
-	rows, err := r.db.Query(
+	rows, err := r.db.QueryContext(
 		ctx,
 		"SELECT id, site_id, name, port FROM web_services",
 	)
@@ -46,19 +45,30 @@ func (r *Repository) GetAll(ctx context.Context) ([]WebService, error) {
 }
 
 func (r *Repository) Create(ctx context.Context, service *WebService) error {
-	return r.db.QueryRow(
+	res, err := r.db.ExecContext(
 		ctx,
-		"INSERT INTO web_services(site_id, name, port) VALUES($1, $2, $3) RETURNING id",
+		"INSERT INTO web_services(site_id, name, port) VALUES(?, ?, ?)",
 		service.SiteID,
 		service.Name,
 		service.Port,
-	).Scan(&service.ID)
+	)
+	if err != nil {
+		return err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	service.ID = id
+	return nil
 }
 
 func (r *Repository) GetBySiteID(ctx context.Context, siteID int64) ([]WebService, error) {
-	rows, err := r.db.Query(
+	rows, err := r.db.QueryContext(
 		ctx,
-		"SELECT id, site_id, name, port FROM web_services WHERE site_id=$1",
+		"SELECT id, site_id, name, port FROM web_services WHERE site_id=?",
 		siteID,
 	)
 	if err != nil {
