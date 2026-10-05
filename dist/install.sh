@@ -72,6 +72,36 @@ mv "$TMP_BINARY" "$BINARY_PATH"
 echo "Сервер установлен: $BINARY_PATH"
 
 # ============================
+# 6. Скачивание скриптов управления
+# ============================
+echo "=== Установка скриптов управления ==="
+
+START_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/start.sh"
+STOP_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/stop.sh"
+UPDATE_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/update.sh"
+
+TMP_START=$(mktemp /tmp/adpanel-start-XXXXXX.sh)
+TMP_STOP=$(mktemp /tmp/adpanel-stop-XXXXXX.sh)
+TMP_UPDATE=$(mktemp /tmp/adpanel-update-XXXXXX.sh)
+
+echo "Скачивание: $START_URL"
+wget -qO "$TMP_START" "$START_URL"
+chmod +x "$TMP_START"
+mv "$TMP_START" "$APP_DIR/start.sh"
+
+echo "Скачивание: $STOP_URL"
+wget -qO "$TMP_STOP" "$STOP_URL"
+chmod +x "$TMP_STOP"
+mv "$TMP_STOP" "$APP_DIR/stop.sh"
+
+echo "Скачивание: $UPDATE_URL"
+wget -qO "$TMP_UPDATE" "$UPDATE_URL"
+chmod +x "$TMP_UPDATE"
+mv "$TMP_UPDATE" "$APP_DIR/update.sh"
+
+echo "Скрипты установлены: $APP_DIR/start.sh, $APP_DIR/stop.sh, $APP_DIR/update.sh"
+
+# ============================
 # 7. Создание systemd сервиса для сервера
 # ============================
 echo "=== Настройка systemd сервиса ==="
@@ -159,6 +189,9 @@ echo ""
 echo "Сервер: systemctl status adpanel-server"
 echo "Nginx:  systemctl status nginx"
 echo "Логи:   journalctl -u adpanel-server -f"
+echo "Старт:  $APP_DIR/start.sh"
+echo "Стоп:   $APP_DIR/stop.sh"
+echo "Обнов:  $APP_DIR/update.sh"
 echo ""
 echo "Доступ: http://$(hostname -I | awk '{print $1}')"
 echo ""
