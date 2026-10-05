@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import zipPack from "vite-plugin-zip-pack";
 
 // https://vite.dev/config/
 export default defineConfig({
-  build:  {
-    outDir:"../distr/frontend"
-  },
-  plugins: [react()],
+  plugins: [react(), zipPack({
+    outDir:'../distr/',
+    outFileName:'frontend.zip'
+  })],
  server: {
     proxy: {
       '/api': {

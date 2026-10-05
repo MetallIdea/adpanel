@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-Dp58Igxz.js";var t=e();function n(){return(0,t.jsxs)(`div`,{children:[(0,t.jsx)(`h1`,{children:`Home`}),(0,t.jsx)(`p`,{children:`Home component`})]})}export{n as default};
