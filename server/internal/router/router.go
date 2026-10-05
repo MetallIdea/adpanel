@@ -1,4 +1,4 @@
-package main
+package router
 
 import (
 	"github.com/MetallIdea/adpanel/server/internal/auth"
@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func setupRouter() *gin.Engine {
+func SetupRouter() *gin.Engine {
 	siteRepo := website.NewRepository(db.DB)
 	siteHandler := website.NewHandler(siteRepo)
 
@@ -22,7 +22,7 @@ func setupRouter() *gin.Engine {
 
 	r := gin.Default()
 
-	authorized := r.Group("/")
+	authorized := r.Group("/api")
 	authorized.Use(auth.AuthMiddleware())
 
 	authorized.GET("/sites", siteHandler.GetSites)

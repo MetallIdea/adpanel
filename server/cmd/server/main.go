@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/MetallIdea/adpanel/server/internal/db"
 	"github.com/MetallIdea/adpanel/server/internal/migration"
+	"github.com/MetallIdea/adpanel/server/internal/router"
 )
 
 func main() {
@@ -25,6 +26,6 @@ func main() {
 		panic(err)
 	}
 
-	r := setupRouter()
+	r := router.SetupRouter()
 	r.Run(":8080")
 }
