@@ -5,7 +5,8 @@ set -e
 # Конфигурация
 # ============================
 APP_DIR="/opt/adpanel"
-BINARY_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/distr/server"  # URL для скачивания дистрибутива сервера
+FRONTEND_URL="https://github.com/MetallIdea/adpanel/raw/refs/heads/installation/dist/frontend.zip"
+BINARY_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/server"  # URL для скачивания дистрибутива сервера
 DOMAIN=""      # Укажите домен или оставьте пустым
 PORT=8765      # Порт приложения
 
@@ -24,6 +25,7 @@ apt install -y \
     curl \
     wget \
     nginx \
+    unzip \
     ufw
 
 # ============================
@@ -34,7 +36,23 @@ mkdir -p "$APP_DIR"
 mkdir -p /var/www/adpanel
 
 # ============================
-# 4. Скачивание и установка сервера
+# 4. Скачивание и установка фронтенда
+# ============================
+echo "=== Установка фронтенда ==="
+
+if [ -n "$FRONTEND_URL" ]; then
+    TMP_FRONTEND=$(mktemp /tmp/adpanel-frontend-XXXXXX.zip)
+    echo "Скачивание фронтенда: $FRONTEND_URL"
+    wget -qO "$TMP_FRONTEND" "$FRONTEND_URL"
+    unzip -qo "$TMP_FRONTEND" -d /var/www/adpanel
+    rm -f "$TMP_FRONTEND"
+    echo "Фронтенд установлен: /var/www/adpanel"
+else
+    echo "ПРЕДУПРЕЖДЕНИЕ: FRONTEND_URL не задан, фронтенд не установлен"
+fi
+
+# ============================
+# 5. Скачивание и установка сервера
 # ============================
 echo "=== Установка сервера ==="
 
@@ -54,7 +72,7 @@ mv "$TMP_BINARY" "$BINARY_PATH"
 echo "Сервер установлен: $BINARY_PATH"
 
 # ============================
-# 5. Создание systemd сервиса для сервера
+# 7. Создание systemd сервиса для сервера
 # ============================
 echo "=== Настройка systemd сервиса ==="
 cat > /etc/systemd/system/adpanel-server.service <<EOF
@@ -81,7 +99,7 @@ systemctl enable adpanel-server
 systemctl start adpanel-server
 
 # ============================
-# 6. Настройка Nginx
+# 8. Настройка Nginx
 # ============================
 echo "=== Настройка Nginx ==="
 NGINX_CONF="/etc/nginx/sites-available/adpanel"
@@ -90,12 +108,6 @@ cat > "$NGINX_CONF" <<EOF
 server {
     listen 80;
     server_name $DOMAIN;
-
-    # Статика клиента
-    location / {
-        root /var/www/adpanel;
-        try_files \$uri \$uri/ /index.html;
-    }
 
     # Проксирование API
     location /api/ {
@@ -108,13 +120,19 @@ server {
     }
 
     # Проксирование других endpoint'ов сервера
-    location / {
+    location /server {
         proxy_pass http://127.0.0.1:$PORT;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    # Статика клиента (по умолчанию)
+    location / {
+        root /var/www/adpanel;
+        try_files \$uri \$uri/ /index.html;
     }
 }
 EOF
@@ -123,7 +141,7 @@ ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/adpanel
 nginx -t && systemctl reload nginx
 
 # ============================
-# 7. Настройка фаервола
+# 9. Настройка фаервола
 # ============================
 echo "=== Настройка фаервола ==="
 ufw allow 80/tcp
