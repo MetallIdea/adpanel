@@ -11,7 +11,8 @@ STOP_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/d
 UPDATE_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/update.sh"
 BINARY_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/server"  # URL для скачивания дистрибутива сервера
 DOMAIN=""      # Укажите домен или оставьте пустым
-PORT=8765      # Порт приложения
+PORT=8080      # Порт приложения
+EXTERNAL_PORT=8765
 
 # ============================
 # 1. Обновление системы
@@ -148,7 +149,7 @@ NGINX_CONF="/etc/nginx/sites-available/adpanel"
 
 cat > "$NGINX_CONF" <<EOF
 server {
-    listen 80;
+    listen $EXTERNAL_PORT;
     server_name $DOMAIN;
 
     # Проксирование API
@@ -186,6 +187,7 @@ nginx -t && systemctl reload nginx
 # 9. Настройка фаервола
 # ============================
 echo "=== Настройка фаервола ==="
+ufw allow $EXTERNAL_PORT/tcp
 ufw allow 80/tcp
 ufw allow 22/tcp
 echo "y" | ufw enable 2>/dev/null || true
@@ -205,7 +207,7 @@ echo "Старт:  $APP_DIR/start.sh"
 echo "Стоп:   $APP_DIR/stop.sh"
 echo "Обнов:  $APP_DIR/update.sh"
 echo ""
-echo "Доступ: http://$(hostname -I | awk '{print $1}')"
+echo "Доступ: http://$(hostname -I | awk '{print $1}'):$EXTERNAL_PORT"
 echo ""
 echo ""
 echo "========================================="
