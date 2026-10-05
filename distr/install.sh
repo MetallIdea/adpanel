@@ -5,9 +5,9 @@ set -e
 # Конфигурация
 # ============================
 APP_DIR="/opt/adpanel"
-BINARY_URL=""  # URL для скачивания дистрибутива сервера
+BINARY_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/distr/server"  # URL для скачивания дистрибутива сервера
 DOMAIN=""      # Укажите домен или оставьте пустым
-PORT=8080      # Порт приложения
+PORT=8765      # Порт приложения
 
 # ============================
 # 1. Обновление системы
