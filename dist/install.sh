@@ -10,23 +10,14 @@ START_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/
 STOP_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/stop.sh"
 UPDATE_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/update.sh"
 BINARY_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/server"  # URL для скачивания дистрибутива сервера
-DOMAIN=""      # Укажите домен или оставьте пустым
 PORT=8080      # Порт приложения
 EXTERNAL_PORT=8765
 
 # ============================
-# 1. Обновление системы
-# ============================
-echo "=== Обновление системы ==="
-apt update -y
-apt upgrade -y
-
-# ============================
-# 2. Установка зависимостей
+# 1. Установка зависимостей
 # ============================
 echo "=== Установка зависимостей ==="
 apt install -y \
-    curl \
     wget \
     nginx \
     unzip \
@@ -76,7 +67,7 @@ mv "$TMP_BINARY" "$BINARY_PATH"
 echo "Сервер установлен: $BINARY_PATH"
 
 # ============================
-# 6. Скачивание скриптов управления
+# 5. Скачивание скриптов управления
 # ============================
 echo "=== Установка скриптов управления ==="
 
@@ -150,7 +141,7 @@ NGINX_CONF="/etc/nginx/sites-available/adpanel"
 cat > "$NGINX_CONF" <<EOF
 server {
     listen $EXTERNAL_PORT;
-    server_name $DOMAIN;
+    #server_name _;
 
     # Проксирование API
     location /api/ {
@@ -216,4 +207,3 @@ echo "========================================="
 echo "Логин:    $ADMIN_LOGIN"
 echo "Пароль:   $ADMIN_PASSWORD"
 echo "========================================="
-echo ""

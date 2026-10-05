@@ -5,7 +5,7 @@ set -e
 # Конфигурация
 # ============================
 APP_DIR="/opt/adpanel"
-FRONTEND_URL="https://github.com/MetallIdea/adpanel/raw/refs/heads/installation/dist/frontend.zip"
+FRONTEND_URL="https://github.com/MetallIdea/adpanel/raw/refs/heads/main/dist/frontend.zip"
 BINARY_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/server"
 FRONTEND_DIR="/var/www/adpanel"
 
@@ -37,6 +37,12 @@ TMP_BINARY=$(mktemp /tmp/adpanel-server-XXXXXX)
 echo "Скачивание: $BINARY_URL"
 wget -qO "$TMP_BINARY" "$BINARY_URL"
 chmod +x "$TMP_BINARY"
+
+if [ -f "$BINARY_PATH" ]; then
+    echo "Удаление старого бинарника..."
+    rm -f "$BINARY_PATH"
+fi
+
 mv "$TMP_BINARY" "$BINARY_PATH"
 
 echo "Бинарник обновлён: $BINARY_PATH"
