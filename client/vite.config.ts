@@ -1,9 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import zipPack from "vite-plugin-zip-pack";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), zipPack({
+    outDir:'../distr/',
+    outFileName:'frontend.zip'
+  })],
  server: {
     proxy: {
       '/api': {
@@ -11,5 +15,5 @@ export default defineConfig({
         changeOrigin: true,
       },
     }
-  }
+  },
 })
