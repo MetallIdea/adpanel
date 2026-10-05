@@ -33,7 +33,9 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, LoginResponse{
-		Token: token,
+	c.SetCookie("jwt_token", token, 3600*24, "", "", false, true)
+
+	c.JSON(200, gin.H{
+		"message": "login successful",
 	})
 }
