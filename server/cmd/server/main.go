@@ -13,16 +13,7 @@ func main() {
 	}
 	defer db.DB.Close()
 
-	migrator, err := migration.NewMigrator(db.DB, "migration")
-	if err != nil {
-		panic(err)
-	}
-
-	if err = migrator.Init(); err != nil {
-		panic(err)
-	}
-
-	if err = migrator.Run(); err != nil {
+	if err := migration.Migrate(db.DB, "migration"); err != nil {
 		panic(err)
 	}
 

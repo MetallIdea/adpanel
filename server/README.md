@@ -11,5 +11,5 @@ go run ./cmd/server
 ```powershell
 $Env:GOOS = "linux"; $Env:GOARCH = "amd64"
 
-go build -o ../distr ./cmd/server
+go build -o ../dist ./cmd/server
 ```
