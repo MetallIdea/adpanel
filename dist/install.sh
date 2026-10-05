@@ -10,7 +10,6 @@ START_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/
 STOP_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/stop.sh"
 UPDATE_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/update.sh"
 BINARY_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/server"  # URL для скачивания дистрибутива сервера
-DOMAIN=""      # Укажите домен или оставьте пустым
 PORT=8080      # Порт приложения
 EXTERNAL_PORT=8765
 
@@ -142,7 +141,7 @@ NGINX_CONF="/etc/nginx/sites-available/adpanel"
 cat > "$NGINX_CONF" <<EOF
 server {
     listen $EXTERNAL_PORT;
-    server_name $DOMAIN;
+    #server_name _;
 
     # Проксирование API
     location /api/ {
