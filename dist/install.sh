@@ -5,7 +5,10 @@ set -e
 # Конфигурация
 # ============================
 APP_DIR="/opt/adpanel"
-FRONTEND_URL="https://github.com/MetallIdea/adpanel/raw/refs/heads/installation/dist/frontend.zip"
+FRONTEND_URL="https://github.com/MetallIdea/adpanel/raw/refs/heads/main/dist/frontend.zip"
+START_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/start.sh"
+STOP_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/stop.sh"
+UPDATE_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/update.sh"
 BINARY_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/server"  # URL для скачивания дистрибутива сервера
 DOMAIN=""      # Укажите домен или оставьте пустым
 PORT=8765      # Порт приложения
@@ -76,10 +79,6 @@ echo "Сервер установлен: $BINARY_PATH"
 # ============================
 echo "=== Установка скриптов управления ==="
 
-START_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/start.sh"
-STOP_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/stop.sh"
-UPDATE_URL="https://raw.githubusercontent.com/MetallIdea/adpanel/refs/heads/main/dist/update.sh"
-
 TMP_START=$(mktemp /tmp/adpanel-start-XXXXXX.sh)
 TMP_STOP=$(mktemp /tmp/adpanel-stop-XXXXXX.sh)
 TMP_UPDATE=$(mktemp /tmp/adpanel-update-XXXXXX.sh)
@@ -100,6 +99,19 @@ chmod +x "$TMP_UPDATE"
 mv "$TMP_UPDATE" "$APP_DIR/update.sh"
 
 echo "Скрипты установлены: $APP_DIR/start.sh, $APP_DIR/stop.sh, $APP_DIR/update.sh"
+
+# ============================
+# 6.5. Создание .env файла
+# ============================
+echo "=== Создание .env файла ==="
+
+ADMIN_LOGIN="admin"
+ADMIN_PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+
+cat > "$APP_DIR/.env" <<EOF
+ADMIN_LOGIN=$ADMIN_LOGIN
+ADMIN_PASSWORD=$ADMIN_PASSWORD
+EOF
 
 # ============================
 # 7. Создание systemd сервиса для сервера
@@ -194,4 +206,12 @@ echo "Стоп:   $APP_DIR/stop.sh"
 echo "Обнов:  $APP_DIR/update.sh"
 echo ""
 echo "Доступ: http://$(hostname -I | awk '{print $1}')"
+echo ""
+echo ""
+echo "========================================="
+echo "  Учетные данные администратора"
+echo "========================================="
+echo "Логин:    $ADMIN_LOGIN"
+echo "Пароль:   $ADMIN_PASSWORD"
+echo "========================================="
 echo ""
