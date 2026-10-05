@@ -37,6 +37,12 @@ TMP_BINARY=$(mktemp /tmp/adpanel-server-XXXXXX)
 echo "Скачивание: $BINARY_URL"
 wget -qO "$TMP_BINARY" "$BINARY_URL"
 chmod +x "$TMP_BINARY"
+
+if [ -f "$BINARY_PATH" ]; then
+    echo "Удаление старого бинарника..."
+    rm -f "$BINARY_PATH"
+fi
+
 mv "$TMP_BINARY" "$BINARY_PATH"
 
 echo "Бинарник обновлён: $BINARY_PATH"

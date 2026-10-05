@@ -13,7 +13,7 @@ func main() {
 	}
 	defer db.DB.Close()
 
-	if err := migration.Migrate(db.DB, "migration"); err != nil {
+	if err := migration.Migrate(db.DB); err != nil {
 		panic(err)
 	}
 
