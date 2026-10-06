@@ -4,6 +4,7 @@ import (
 	"github.com/MetallIdea/adpanel/server/internal/auth"
 	"github.com/MetallIdea/adpanel/server/internal/command"
 	"github.com/MetallIdea/adpanel/server/internal/db"
+	"github.com/MetallIdea/adpanel/server/internal/server"
 	"github.com/MetallIdea/adpanel/server/internal/webservice"
 	"github.com/MetallIdea/adpanel/server/internal/website"
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,8 @@ func SetupRouter() *gin.Engine {
 	authHandler := auth.NewHandler()
 
 	commandHandler := command.NewHandler()
+
+	serverHandler := server.NewHandler()
 
 	r := gin.Default()
 
@@ -38,6 +41,8 @@ func SetupRouter() *gin.Engine {
 	r.POST("/api/login", authHandler.Login)
 
 	authorized.POST("/execute", commandHandler.Execute)
+
+	authorized.GET("/server/status", serverHandler.GetStatus)
 
 	return r
 }
