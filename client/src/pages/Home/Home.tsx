@@ -1,8 +1,9 @@
+import { MetricsBar } from '../../components/MetricsBar/MetricsBar'
+
 export default function Home() {
   return (
     <div>
-      <h1>Home</h1>
-      <p>Home component</p>
+      <MetricsBar />
     </div>
   )
 }
