@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
-import { MeterGroup } from 'primereact/metergroup'
 import { Button } from 'primereact/button'
 import { getServerStatus, type ServerStatus } from '../../services/serverApi'
+import { DoughnutMetric } from '../DoughnutMetric/DoughnutMetric'
 import styles from './MetricsBar.module.css'
 
 const METER_CONFIGS = [
@@ -29,19 +29,13 @@ export function MetricsBar() {
   }, [])
 
   useEffect(() => {
-    fetchStatus();
+    fetchStatus()
   }, [])
 
   useEffect(() => {
     const interval = setInterval(fetchStatus, 60000)
     return () => clearInterval(interval)
   }, [fetchStatus])
-
-  const values = METER_CONFIGS.map((config) => ({
-    label: config.label,
-    value: status?.[config.key]?.usage_percent ?? 0,
-    color: config.color,
-  }))
 
   const formatValue = (key: 'cpu' | 'memory' | 'disk'): string => {
     const data = status?.[key]
@@ -71,11 +65,16 @@ export function MetricsBar() {
         </div>
       )}
 
-      <MeterGroup
-        values={values}
-        min={0}
-        max={100}
-      />
+      <div className={styles.doughnuts}>
+        {METER_CONFIGS.map((config) => (
+          <DoughnutMetric
+            key={config.key}
+            percentage={status?.[config.key]?.usage_percent ?? 0}
+            color={config.color}
+            label={config.label}
+          />
+        ))}
+      </div>
 
       <div className={styles.details}>
         {METER_CONFIGS.map((config) => (

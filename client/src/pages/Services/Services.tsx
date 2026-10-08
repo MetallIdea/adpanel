@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ServicesList } from '../../components/Services/ServicesList'
+import { ServicesList } from '../../components/ServicesList/ServicesList'
 import { Button } from 'primereact/button'
 
 export default function Services() {

@@ -5,6 +5,8 @@ import { Layout } from './components/Layout/Layout'
 const Home = lazy(() => import('./pages/Home/Home'))
 const Sites = lazy(() => import('./pages/Sites/Sites'))
 const CreateSite = lazy(() => import('./pages/Sites/CreateSite'))
+const EditSite = lazy(() => import('./pages/Sites/EditSite'))
+const SiteDetails = lazy(() => import('./pages/Sites/SiteDetails'))
 const Services = lazy(() => import('./pages/Services/Services'))
 const CreateService = lazy(() => import('./pages/Services/CreateService'))
 const ServiceDetails = lazy(() => import('./pages/Services/ServiceDetails'))
@@ -20,6 +22,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/sites" element={<Sites />} />
           <Route path="/sites/create" element={<CreateSite />} />
+          <Route path="/sites/:id/edit" element={<EditSite />} />
+          <Route path="/sites/:id" element={<SiteDetails />} />
           <Route path="/services" element={<Services />} />
           <Route path="/services/create" element={<CreateService />} />
           <Route path="/services/:id" element={<ServiceDetails />} />
