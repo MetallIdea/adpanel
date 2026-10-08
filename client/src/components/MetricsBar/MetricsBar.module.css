@@ -34,6 +34,14 @@
   font-size: 0.875rem;
 }
 
+.doughnuts {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
 .details {
   display: flex;
   gap: 1.5rem;

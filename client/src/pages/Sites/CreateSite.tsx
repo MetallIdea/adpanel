@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Toast } from 'primereact/toast'
-import { SiteForm, type SiteFormValues } from '../../components/Sites/SiteForm'
+import { SiteForm, type SiteFormValues } from '../../components/SiteForm/SiteForm'
 import { useAddSiteMutation } from '../../services/sitesApi'
 
 export default function CreateSite() {
@@ -36,7 +36,12 @@ export default function CreateSite() {
   }, [isSuccess, isError, error, navigate])
 
   const handleSuccess = (values: SiteFormValues) => {
-    addSite(values)
+    addSite({
+      name: values.name,
+      url: values.url,
+      port: values.port,
+      status: values.status,
+    })
   }
 
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Toast } from 'primereact/toast'
-import { ServiceForm, type ServiceFormValues } from '../../components/Services/ServiceForm'
+import { ServiceForm, type ServiceFormValues } from '../../components/ServiceForm/ServiceForm'
 import { useAddServiceMutation } from '../../services/servicesApi'
 
 export default function CreateService() {

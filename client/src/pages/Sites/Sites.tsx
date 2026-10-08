@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { SitesList } from '../../components/Sites/SitesList'
+import { SitesList } from '../../components/SitesList/SitesList'
 import { Button } from 'primereact/button'
 
 export default function Sites() {
