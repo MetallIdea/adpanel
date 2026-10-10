@@ -36,7 +36,10 @@ func SetupRouter() *gin.Engine {
 	authorized.DELETE("/sites/:id", siteHandler.DeleteSite)
 
 	authorized.GET("/services", serviceHandler.GetServices)
+	authorized.GET("/services/:id", serviceHandler.GetServiceByID)
 	authorized.POST("/services", serviceHandler.CreateService)
+	authorized.PUT("/services/:id", serviceHandler.UpdateService)
+	authorized.DELETE("/services/:id", serviceHandler.DeleteService)
 
 	r.POST("/api/login", authHandler.Login)
 
