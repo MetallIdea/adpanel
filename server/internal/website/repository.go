@@ -14,7 +14,7 @@ func NewRepository(db *sql.DB) *Repository {
 }
 
 func (r *Repository) GetAll(ctx context.Context) ([]Website, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, name, url, status FROM web_sites")
+	rows, err := r.db.QueryContext(ctx, "SELECT id, name, url, port, status FROM web_sites")
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func (r *Repository) GetAll(ctx context.Context) ([]Website, error) {
 	for rows.Next() {
 		var site Website
 
-		err := rows.Scan(&site.ID, &site.Name, &site.URL, &site.Status)
+		err := rows.Scan(&site.ID, &site.Name, &site.URL, &site.Port)
 		if err != nil {
 			return nil, err
 		}
@@ -45,9 +45,9 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*Website, error) {
 
 	err := r.db.QueryRowContext(
 		ctx,
-		"SELECT id, name, url, status FROM web_sites WHERE id=?",
+		"SELECT id, name, url, port FROM web_sites WHERE id=?",
 		id,
-	).Scan(&site.ID, &site.Name, &site.URL, &site.Status)
+	).Scan(&site.ID, &site.Name, &site.URL, &site.Port)
 
 	if err != nil {
 		return nil, err
@@ -59,10 +59,10 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*Website, error) {
 func (r *Repository) Create(ctx context.Context, site *Website) error {
 	res, err := r.db.ExecContext(
 		ctx,
-		"INSERT INTO web_sites(name, url, status) VALUES(?, ?, ?)",
+		"INSERT INTO web_sites(name, url, port) VALUES(?, ?, ?)",
 		site.Name,
 		site.URL,
-		site.Status,
+		site.Port,
 	)
 	if err != nil {
 		return err
@@ -90,10 +90,10 @@ func (r *Repository) Delete(ctx context.Context, id int64) error {
 func (r *Repository) Update(ctx context.Context, site *Website) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		"UPDATE web_sites SET name=?, url=?, status=? WHERE id=?",
+		"UPDATE web_sites SET name=?, url=?, port=? WHERE id=?",
 		site.Name,
 		site.URL,
-		site.Status,
+		site.Port,
 		site.ID,
 	)
 

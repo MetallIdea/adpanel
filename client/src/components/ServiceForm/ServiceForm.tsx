@@ -1,4 +1,4 @@
-import { Formik, Form, Field, ErrorMessage } from 'formik'
+import { Formik, Form, Field, ErrorMessage, type FormikHelpers } from 'formik'
 import * as Yup from 'yup'
 import { Card } from 'primereact/card'
 import { InputText } from 'primereact/inputtext'
@@ -34,10 +34,79 @@ const validationSchema = Yup.object({
     .oneOf(['active', 'inactive', 'pending']),
 })
 
+function FormField({
+  name,
+  label,
+}: {
+  name: keyof ServiceFormValues
+  label: string
+}) {
+  return (
+    <Field name={name}>
+      {({ field, form }: { field: any; form: any }) => (
+        <div className="p-field mb-4">
+          <label htmlFor={name} className="p-label">
+            {label}
+          </label>
+          <InputText
+            id={name}
+            value={field[name] as string}
+            onChange={(e) => form.setFieldValue(name, e.target.value)}
+            className="w-full"
+          />
+          <ErrorMessage
+            name={name}
+            component={() => (
+              <small className="p-error block mt-1">{form.errors[name]}</small>
+            )}
+          />
+        </div>
+      )}
+    </Field>
+  )
+}
+
+function FormDropdown({
+  name,
+  label,
+  options,
+}: {
+  name: keyof ServiceFormValues
+  label: string
+  options: { label: string; value: string }[]
+}) {
+  return (
+    <Field name={name}>
+      {({ field, form }: { field: any; form: any }) => (
+        <div className="p-field mb-4">
+          <label htmlFor={name} className="p-label">
+            {label}
+          </label>
+          <Dropdown
+            id={name}
+            value={field[name] as string}
+            options={options}
+            optionLabel="label"
+            optionValue="value"
+            onChange={(e) => form.setFieldValue(name, e.value)}
+            className="w-full"
+          />
+          <ErrorMessage
+            name={name}
+            component={() => (
+              <small className="p-error block mt-1">{form.errors[name]}</small>
+            )}
+          />
+        </div>
+      )}
+    </Field>
+  )
+}
+
 export function ServiceForm({ onSubmit, onCancel, loading = false }: ServiceFormProps) {
-  const handleSubmit = (values: ServiceFormValues, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
+  const handleSubmit = (values: ServiceFormValues, helpers: FormikHelpers<ServiceFormValues>) => {
     onSubmit(values)
-    setSubmitting(false)
+    helpers.setSubmitting(false)
   }
 
   return (
@@ -53,56 +122,9 @@ export function ServiceForm({ onSubmit, onCancel, loading = false }: ServiceForm
       >
         {({ isSubmitting, dirty, isValid }) => (
           <Form className="p-fluid">
-            <div className="p-field mb-4">
-              <label htmlFor="title" className="p-label">
-                Название
-              </label>
-              <Field
-                id="title"
-                name="title"
-                component={InputText}
-                className="w-full"
-              />
-              <ErrorMessage
-                name="title"
-                component={() => (
-                  <small className="p-error block mt-1">Название обязательно</small>
-                )}
-              />
-            </div>
-
-            <div className="p-field mb-4">
-              <label htmlFor="description" className="p-label">
-                Описание
-              </label>
-              <Field
-                id="description"
-                name="description"
-                component={InputText}
-                className="w-full"
-              />
-            </div>
-
-            <div className="p-field mb-4">
-              <label htmlFor="status" className="p-label">
-                Статус
-              </label>
-              <Field
-                id="status"
-                name="status"
-                component={Dropdown}
-                options={statusOptions}
-                optionLabel="label"
-                optionValue="value"
-                className="w-full"
-              />
-              <ErrorMessage
-                name="status"
-                component={() => (
-                  <small className="p-error block mt-1">Статус обязателен</small>
-                )}
-              />
-            </div>
+            <FormField name="title" label="Название" />
+            <FormField name="description" label="Описание" />
+            <FormDropdown name="status" label="Статус" options={statusOptions} />
 
             <div className="flex gap-2 mt-6">
               <Button
