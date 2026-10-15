@@ -14,7 +14,7 @@ func NewRepository(db *sql.DB) *Repository {
 }
 
 func (r *Repository) GetAll(ctx context.Context) ([]Website, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, name, url, port FROM web_sites")
+	rows, err := r.db.QueryContext(ctx, "SELECT id, name, url, port, status FROM web_sites")
 	if err != nil {
 		return nil, err
 	}
@@ -31,6 +31,10 @@ func (r *Repository) GetAll(ctx context.Context) ([]Website, error) {
 		}
 
 		sites = append(sites, site)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return sites, nil

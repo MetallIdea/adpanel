@@ -1,6 +1,7 @@
 package website
 
 import (
+	"database/sql"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -29,11 +30,19 @@ func (h *Handler) GetSites(c *gin.Context) {
 }
 
 func (h *Handler) GetSiteByID(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid site id"})
+		return
+	}
 
 	site, err := h.repo.GetByID(c, id)
-	if err != nil {
+	if err == sql.ErrNoRows {
 		c.JSON(404, gin.H{"error": "site not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -44,7 +53,26 @@ func (h *Handler) CreateSite(c *gin.Context) {
 	var site Website
 
 	if err := c.ShouldBindJSON(&site); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	site.Name = sanitizeInput(site.Name)
+	site.URL = sanitizeInput(site.URL)
+	site.Status = sanitizeInput(site.Status)
+
+	if site.Name == "" {
+		c.JSON(400, gin.H{"error": "name is required"})
+		return
+	}
+
+	if site.URL == "" {
+		c.JSON(400, gin.H{"error": "url is required"})
+		return
+	}
+
+	if !isValidStatus(site.Status) {
+		c.JSON(400, gin.H{"error": "invalid status. Allowed values: active, inactive, pending"})
 		return
 	}
 
@@ -71,12 +99,13 @@ func (h *Handler) CreateSite(c *gin.Context) {
 }
 
 func (h *Handler) DeleteSite(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid site id"})
+		return
+	}
 
-	// Delete nginx config file first
-	_ = h.nginxService.DeleteConfig(id)
-
-	err := h.repo.Delete(c, id)
+	err = h.repo.Delete(c, id)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -86,17 +115,50 @@ func (h *Handler) DeleteSite(c *gin.Context) {
 }
 
 func (h *Handler) UpdateSite(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid site id"})
+		return
+	}
 
 	var site Website
 	if err := c.ShouldBindJSON(&site); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, gin.H{"error": "invalid request body"})
 		return
 	}
 
 	site.ID = id
+	site.Name = sanitizeInput(site.Name)
+	site.URL = sanitizeInput(site.URL)
+	site.Status = sanitizeInput(site.Status)
 
-	err := h.repo.Update(c, &site)
+	if site.Name == "" {
+		c.JSON(400, gin.H{"error": "name is required"})
+		return
+	}
+
+	if site.URL == "" {
+		c.JSON(400, gin.H{"error": "url is required"})
+		return
+	}
+
+	if !isValidStatus(site.Status) {
+		c.JSON(400, gin.H{"error": "invalid status. Allowed values: active, inactive, pending"})
+		return
+	}
+
+	// Check if site exists first
+	_, err = h.repo.GetByID(c, id)
+	if err == sql.ErrNoRows {
+		c.JSON(404, gin.H{"error": "site not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = h.repo.Update(c, &site)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -105,66 +167,14 @@ func (h *Handler) UpdateSite(c *gin.Context) {
 	c.JSON(200, site)
 }
 
-func (h *Handler) GetNginxConfig(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	_, err := h.repo.GetByID(c, id)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "site not found"})
-		return
+func isValidStatus(status string) bool {
+	switch status {
+	case "active", "inactive", "pending":
+		return true
 	}
-
-	config, err := h.nginxService.ReadConfig(id)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(200, gin.H{"nginx_config": config})
+	return false
 }
 
-func (h *Handler) UpdateNginxConfig(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	var req struct {
-		NginxConfig string `json:"nginx_config" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-
-	_, err := h.repo.GetByID(c, id)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "site not found"})
-		return
-	}
-
-	if err := h.nginxService.UpdateConfig(id, req.NginxConfig); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(200, gin.H{"message": "nginx config updated"})
-}
-
-func generateDefaultNginxConfig(domain string, port int) string {
-	if domain == "" {
-		domain = "_"
-	}
-	return `server {
-    listen 80;
-    server_name ` + domain + `;
-
-    location / {
-        proxy_pass http://127.0.0.1:` + strconv.Itoa(port) + `;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-`
+func sanitizeInput(s string) string {
+	return s
 }

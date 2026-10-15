@@ -5,4 +5,5 @@ type Website struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
 	Port int    `json:"port"`
+	Status string `json:"status"`
 }
