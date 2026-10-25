@@ -1,6 +1,11 @@
 package router
 
 import (
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/MetallIdea/adpanel/server/internal/auth"
 	"github.com/MetallIdea/adpanel/server/internal/command"
 	"github.com/MetallIdea/adpanel/server/internal/db"
@@ -19,7 +24,56 @@ func SetupRouter() *gin.Engine {
 
 	authHandler := auth.NewHandler()
 
-	commandHandler := command.NewHandler()
+	// Load command configuration.
+	rules, err := command.LoadWhitelist()
+	if err != nil {
+		panic(fmt.Sprintf("invalid command whitelist configuration: %v", err))
+	}
+
+	defaultTimeout := 30 * time.Second
+	if t := os.Getenv("COMMAND_DEFAULT_TIMEOUT"); t != "" {
+		d, err := time.ParseDuration(t)
+		if err != nil {
+			panic(fmt.Sprintf("invalid COMMAND_DEFAULT_TIMEOUT: %v", err))
+		}
+		if d <= 0 {
+			panic("COMMAND_DEFAULT_TIMEOUT must be positive")
+		}
+		defaultTimeout = d
+	}
+
+	maxOutput := 65536 // 64 KiB default.
+	if m := os.Getenv("COMMAND_MAX_OUTPUT"); m != "" {
+		n, err := command.ParseMaxOutput(m)
+		if err != nil {
+			panic(fmt.Sprintf("invalid COMMAND_MAX_OUTPUT: %v", err))
+		}
+		maxOutput = n
+	}
+
+	rateLimit := 10.0
+	if value := os.Getenv("COMMAND_RATE_LIMIT"); value != "" {
+		rateLimit, err = parseRateLimit(value)
+		if err != nil {
+			panic(fmt.Sprintf("invalid COMMAND_RATE_LIMIT: %v", err))
+		}
+	}
+
+	if err := command.ValidateConfig(
+		defaultTimeout,
+		maxOutput,
+		rateLimit,
+		rules,
+	); err != nil {
+		panic(fmt.Sprintf("invalid command configuration: %v", err))
+	}
+
+	commandHandler := command.NewHandler(
+		rules,
+		rateLimit,
+		defaultTimeout,
+		maxOutput,
+	)
 
 	serverHandler := server.NewHandler()
 
@@ -48,4 +102,15 @@ func SetupRouter() *gin.Engine {
 	authorized.GET("/server/status", serverHandler.GetStatus)
 
 	return r
+}
+
+func parseRateLimit(s string) (float64, error) {
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, err
+	}
+	if v <= 0 {
+		return 0, fmt.Errorf("rate limit must be positive, got %f", v)
+	}
+	return v, nil
 }
