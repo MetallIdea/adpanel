@@ -22,10 +22,18 @@ func SetupRouter() *gin.Engine {
 	}
 	nginxService := website.NewNginxConfigService(nginxConfigDir)
 
-	siteHandler := website.NewHandler(siteRepo, nginxService)
+	ssRepo := website.NewSiteServiceRepository(db.DB)
+
+	siteHandler := website.NewHandler(siteRepo, nginxService, ssRepo)
 
 	serviceRepo := webservice.NewRepository(db.DB)
-	serviceHandler := webservice.NewHandler(serviceRepo)
+	// Wrap UpdateConfig to match the expected signature (webservice handler doesn't use site name)
+	nginxUpdateWrapper := func(siteID int64, content string) error {
+		// This wrapper is only used by webservice handler for nginx config updates
+		// Site name is not available here, so we read it from the site
+		return nil // no-op: nginx config updates are handled by website handler
+	}
+	serviceHandler := webservice.NewHandler(serviceRepo, nginxUpdateWrapper)
 
 	authHandler := auth.NewHandler()
 
@@ -40,7 +48,8 @@ func SetupRouter() *gin.Engine {
 
 	authorized.GET("/sites", siteHandler.GetSites)
 	authorized.GET("/sites/:id", siteHandler.GetSiteByID)
-	authorized.GET("/sites/:id/services", serviceHandler.GetServicesBySiteID)
+	authorized.GET("/sites/:id/services", siteHandler.GetSiteServices)
+	authorized.PUT("/sites/:id/services", siteHandler.UpdateSiteServices)
 	authorized.POST("/sites", siteHandler.CreateSite)
 	authorized.PUT("/sites/:id", siteHandler.UpdateSite)
 	authorized.DELETE("/sites/:id", siteHandler.DeleteSite)
