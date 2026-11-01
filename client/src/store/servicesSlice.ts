@@ -2,9 +2,13 @@ import { createSlice } from '@reduxjs/toolkit'
 
 export type Service = {
   id: number
-  title: string
-  description: string
-  status: 'active' | 'inactive' | 'pending'
+  site_id: number
+  name: string
+  port: number
+  working_dir: string
+  startup_cmd: string
+  env_content: string
+  comment: string
 }
 
 export type ServicesState = {

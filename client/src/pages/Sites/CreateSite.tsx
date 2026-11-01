@@ -40,7 +40,7 @@ export default function CreateSite() {
       name: values.name,
       url: values.url,
       port: values.port,
-      status: values.status,
+      status: values.status as 'active' | 'inactive' | 'pending',
     })
   }
 

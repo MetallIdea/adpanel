@@ -14,7 +14,7 @@ export const servicesApi = createApi({
       query: (id) => `/api/services/${id}`,
       providesTags: ['Service'],
     }),
-    addService: builder.mutation<Service, Omit<Service, 'id' | 'visits'>>({
+    addService: builder.mutation<Service, Omit<Service, 'id'>>({
       query: (service) => ({
         url: '/api/services',
         method: 'POST',
@@ -22,8 +22,34 @@ export const servicesApi = createApi({
       }),
       invalidatesTags: ['Service'],
     }),
+    updateService: builder.mutation<Service, Service>({
+      query: (service) => ({
+        url: `/api/services/${service.id}`,
+        method: 'PUT',
+        body: service,
+      }),
+      invalidatesTags: ['Service'],
+    }),
+    deleteService: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/api/services/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Service'],
+    }),
+    getServicesBySiteId: builder.query<Service[], number>({
+      query: (siteId) => `/api/sites/${siteId}/services`,
+      providesTags: ['Service'],
+    }),
   }),
   tagTypes: ['Service'],
 })
 
-export const { useGetServicesQuery, useGetServiceByIdQuery, useAddServiceMutation } = servicesApi
+export const {
+  useGetServicesQuery,
+  useGetServiceByIdQuery,
+  useAddServiceMutation,
+  useUpdateServiceMutation,
+  useDeleteServiceMutation,
+  useGetServicesBySiteIdQuery,
+} = servicesApi

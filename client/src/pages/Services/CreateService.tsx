@@ -1,13 +1,16 @@
 import { useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Toast } from 'primereact/toast'
 import { ServiceForm, type ServiceFormValues } from '../../components/ServiceForm/ServiceForm'
 import { useAddServiceMutation } from '../../services/servicesApi'
 
 export default function CreateService() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [addService, { isLoading, isSuccess, isError, error }] = useAddServiceMutation()
   const toast = useRef<Toast>(null)
+
+  const initialSiteId = searchParams.get('site_id') ? parseInt(searchParams.get('site_id')!, 10) : undefined
 
   const showToast = (severity: 'success' | 'error', message: string) => {
     if (toast.current) {
@@ -45,6 +48,7 @@ export default function CreateService() {
         onSubmit={handleSuccess}
         onCancel={() => navigate('/services')}
         loading={isLoading}
+        initialSiteId={initialSiteId}
       />
       <Toast ref={toast} />
     </div>

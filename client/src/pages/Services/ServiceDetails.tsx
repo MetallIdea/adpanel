@@ -13,20 +13,32 @@ export default function ServiceDetails() {
 
     return (
         <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-            <Card title={service.title} subTitle={`ID: ${service.id}`}>
+            <Card title={service.name} subTitle={`ID: ${service.id}`}>
                 <p>
-                    <strong>Описание:</strong> {service.description}
+                    <strong>Сайт ID:</strong> {service.site_id}
                 </p>
                 <p>
-                    <strong>Статус:</strong>{' '}
-                    <span style={{ 
-                        color: service.status === 'active' ? 'green' : 
-                               service.status === 'inactive' ? 'red' : 'orange' 
-                    }}>
-                        {service.status === 'active' ? 'Активный' : 
-                         service.status === 'inactive' ? 'Неактивный' : 'Ожидает'}
-                    </span>
+                    <strong>Порт:</strong> {service.port}
                 </p>
+                <p>
+                    <strong>Рабочая директория:</strong> {service.working_dir || '-'}
+                </p>
+                <p>
+                    <strong>Команда запуска:</strong> <code>{service.startup_cmd}</code>
+                </p>
+                {service.comment && (
+                    <p>
+                        <strong>Комментарий:</strong> {service.comment}
+                    </p>
+                )}
+                {service.env_content && (
+                    <p>
+                        <strong>.env файл:</strong>
+                        <pre style={{ background: '#f5f5f5', padding: '10px', borderRadius: '4px', marginTop: '5px' }}>
+                            {service.env_content}
+                        </pre>
+                    </p>
+                )}
             </Card>
         </div>
     )

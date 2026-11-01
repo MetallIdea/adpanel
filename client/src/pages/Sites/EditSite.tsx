@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Toast } from 'primereact/toast'
 import { SiteForm, type SiteFormValues } from '../../components/SiteForm/SiteForm'
-import { useGetSiteByIdQuery, useUpdateSiteMutation, useUpdateNginxConfigMutation, useGetNginxConfigQuery } from '../../services/sitesApi'
+import { useGetSiteByIdQuery, useUpdateSiteMutation, useUpdateNginxConfigMutation, useGetNginxConfigQuery, useGetSiteServicesQuery, useUpdateSiteServicesMutation } from '../../services/sitesApi'
 
 export default function EditSite() {
   const { id } = useParams<{ id: string }>()
@@ -11,9 +11,13 @@ export default function EditSite() {
   const toast = useRef<Toast>(null)
   const [updateSite, { isLoading: isUpdating, isSuccess, isError, error }] = useUpdateSiteMutation()
   const [updateNginxConfig, { isLoading: isUpdatingNginx }] = useUpdateNginxConfigMutation()
+  const [updateSiteServices, { isLoading: isUpdatingServices }] = useUpdateSiteServicesMutation()
 
   const { data: site, isLoading: isLoadingSite } = useGetSiteByIdQuery(siteId)
   const { data: nginxData, isLoading: isLoadingNginx } = useGetNginxConfigQuery(siteId, { skip: !siteId })
+  const { data: siteServices } = useGetSiteServicesQuery(siteId, { skip: !siteId })
+
+  const [nginxConfig, setNginxConfig] = useState('')
 
   const showToast = (severity: 'success' | 'error', message: string) => {
     if (toast.current) {
@@ -41,7 +45,13 @@ export default function EditSite() {
     }
   }, [isSuccess, isError, error, navigate])
 
-  const handleNginxConfigSave = (nginxConfig: string) => {
+  useEffect(() => {
+    if (nginxData) {
+      setNginxConfig(nginxData.nginx_config)
+    }
+  }, [nginxData])
+
+  const handleNginxConfigSave = () => {
     if (site) {
       updateNginxConfig({ id: site.id, nginx_config: nginxConfig })
         .unwrap()
@@ -56,11 +66,30 @@ export default function EditSite() {
 
   const handleSuccess = (values: SiteFormValues) => {
     if (site) {
+      // Save service paths to temp storage for form to pick up
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(window as any).__tempServicePaths = values.services
+
       updateSite({
         ...site,
-        ...values,
-        visits: site.visits,
-        status: site.status,
+        name: values.name,
+        url: values.url,
+        port: values.port,
+        status: values.status as 'active' | 'inactive' | 'pending',
+      })
+      .unwrap()
+      .then(() => {
+        // Update site services
+        if (values.services && values.services.length > 0) {
+          updateSiteServices({
+            id: site.id,
+            services: values.services,
+          }).then(() => {
+            showToast('success', 'Сервисы и nginx конфигурация обновлены')
+          }).catch((err) => {
+            showToast('error', err?.message || 'Ошибка при обновлении сервисов')
+          })
+        }
       })
     }
   }
@@ -73,12 +102,16 @@ export default function EditSite() {
       <SiteForm
         onSubmit={handleSuccess}
         onCancel={() => navigate('/sites')}
-        loading={isUpdating}
+        loading={isUpdating || isUpdatingServices}
         initialValues={{
           name: site.name,
           url: site.url,
           port: site.port,
           status: site.status,
+          services: siteServices?.map((ss: any) => ({
+            service_id: ss.service_id,
+            path: ss.path,
+          })) || [],
         }}
         isEdit
       />
@@ -88,19 +121,15 @@ export default function EditSite() {
           <h3 className="m-0">Nginx конфигурация (файл на диске)</h3>
           <button
             className="p-button p-button-secondary p-button-sm"
-            onClick={() => handleNginxConfigSave(nginxData?.nginx_config || '')}
+            onClick={handleNginxConfigSave}
             disabled={isUpdatingNginx || isLoadingNginx}
           >
             {isUpdatingNginx ? 'Сохранение...' : 'Сохранить конфигурацию'}
           </button>
         </div>
         <textarea
-          value={nginxData?.nginx_config || ''}
-          onChange={(e) => {
-            if (nginxData) {
-              nginxData.nginx_config = e.target.value
-            }
-          }}
+          value={nginxConfig}
+          onChange={(e) => setNginxConfig(e.target.value)}
           style={{
             width: '100%',
             minHeight: '300px',

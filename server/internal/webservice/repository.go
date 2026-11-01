@@ -16,7 +16,7 @@ func NewRepository(db *sql.DB) *Repository {
 func (r *Repository) GetAll(ctx context.Context) ([]WebService, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
-		"SELECT id, site_id, name, port FROM web_services",
+		"SELECT id, site_id, name, port, working_dir, startup_cmd, env_content, comment FROM web_services",
 	)
 	if err != nil {
 		return nil, err
@@ -33,6 +33,10 @@ func (r *Repository) GetAll(ctx context.Context) ([]WebService, error) {
 			&service.SiteID,
 			&service.Name,
 			&service.Port,
+			&service.WorkingDir,
+			&service.StartupCmd,
+			&service.EnvContent,
+			&service.Comment,
 		)
 		if err != nil {
 			return nil, err
@@ -51,10 +55,14 @@ func (r *Repository) GetAll(ctx context.Context) ([]WebService, error) {
 func (r *Repository) Create(ctx context.Context, service *WebService) error {
 	res, err := r.db.ExecContext(
 		ctx,
-		"INSERT INTO web_services(site_id, name, port) VALUES(?, ?, ?)",
+		"INSERT INTO web_services(site_id, name, port, working_dir, startup_cmd, env_content, comment) VALUES(?, ?, ?, ?, ?, ?, ?)",
 		service.SiteID,
 		service.Name,
 		service.Port,
+		service.WorkingDir,
+		service.StartupCmd,
+		service.EnvContent,
+		service.Comment,
 	)
 	if err != nil {
 		return err
@@ -72,7 +80,7 @@ func (r *Repository) Create(ctx context.Context, service *WebService) error {
 func (r *Repository) GetBySiteID(ctx context.Context, siteID int64) ([]WebService, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
-		"SELECT id, site_id, name, port FROM web_services WHERE site_id=?",
+		"SELECT id, site_id, name, port, working_dir, startup_cmd, env_content, comment FROM web_services WHERE site_id=?",
 		siteID,
 	)
 	if err != nil {
@@ -90,6 +98,10 @@ func (r *Repository) GetBySiteID(ctx context.Context, siteID int64) ([]WebServic
 			&service.SiteID,
 			&service.Name,
 			&service.Port,
+			&service.WorkingDir,
+			&service.StartupCmd,
+			&service.EnvContent,
+			&service.Comment,
 		)
 		if err != nil {
 			return nil, err
@@ -110,13 +122,17 @@ func (r *Repository) GetServiceByID(ctx context.Context, id int64) (*WebService,
 
 	err := r.db.QueryRowContext(
 		ctx,
-		"SELECT id, site_id, name, port FROM web_services WHERE id=?",
+		"SELECT id, site_id, name, port, working_dir, startup_cmd, env_content, comment FROM web_services WHERE id=?",
 		id,
 	).Scan(
 		&service.ID,
 		&service.SiteID,
 		&service.Name,
 		&service.Port,
+		&service.WorkingDir,
+		&service.StartupCmd,
+		&service.EnvContent,
+		&service.Comment,
 	)
 
 	if err != nil {
@@ -129,10 +145,14 @@ func (r *Repository) GetServiceByID(ctx context.Context, id int64) (*WebService,
 func (r *Repository) Update(ctx context.Context, service *WebService) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		"UPDATE web_services SET site_id=?, name=?, port=? WHERE id=?",
+		"UPDATE web_services SET site_id=?, name=?, port=?, working_dir=?, startup_cmd=?, env_content=?, comment=? WHERE id=?",
 		service.SiteID,
 		service.Name,
 		service.Port,
+		service.WorkingDir,
+		service.StartupCmd,
+		service.EnvContent,
+		service.Comment,
 		service.ID,
 	)
 
