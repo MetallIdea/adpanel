@@ -76,6 +76,21 @@ func (h *Handler) CreateSite(c *gin.Context) {
 		return
 	}
 
+	if site.Name == "" {
+		c.JSON(400, gin.H{"error": "name is required"})
+		return
+	}
+
+	if site.URL == "" {
+		c.JSON(400, gin.H{"error": "url is required"})
+		return
+	}
+
+	if !isValidStatus(site.Status) {
+		c.JSON(400, gin.H{"error": "invalid status. Allowed values: active, inactive, pending"})
+		return
+	}
+
 	if site.Port == 0 {
 		site.Port = 8080
 	}
