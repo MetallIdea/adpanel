@@ -8,9 +8,11 @@ export const servicesApi = createApi({
   endpoints: (builder) => ({
     getServices: builder.query<Service[], void>({
       query: () => '/api/services',
+      providesTags: ['Service'],
     }),
     getServiceById: builder.query<Service, number>({
       query: (id) => `/api/services/${id}`,
+      providesTags: ['Service'],
     }),
     addService: builder.mutation<Service, Omit<Service, 'id' | 'visits'>>({
       query: (service) => ({
@@ -18,6 +20,7 @@ export const servicesApi = createApi({
         method: 'POST',
         body: service,
       }),
+      invalidatesTags: ['Service'],
     }),
   }),
   tagTypes: ['Service'],

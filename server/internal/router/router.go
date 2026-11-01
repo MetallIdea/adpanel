@@ -17,7 +17,15 @@ import (
 
 func SetupRouter() *gin.Engine {
 	siteRepo := website.NewRepository(db.DB)
-	siteHandler := website.NewHandler(siteRepo)
+
+	// Create nginx config directory
+	nginxConfigDir := "/etc/nginx/sites-enabled"
+	if dir := os.Getenv("NGINX_CONFIG_DIR"); dir != "" {
+		nginxConfigDir = dir
+	}
+	nginxService := website.NewNginxConfigService(nginxConfigDir)
+
+	siteHandler := website.NewHandler(siteRepo, nginxService)
 
 	serviceRepo := webservice.NewRepository(db.DB)
 	serviceHandler := webservice.NewHandler(serviceRepo)
@@ -88,6 +96,8 @@ func SetupRouter() *gin.Engine {
 	authorized.POST("/sites", siteHandler.CreateSite)
 	authorized.PUT("/sites/:id", siteHandler.UpdateSite)
 	authorized.DELETE("/sites/:id", siteHandler.DeleteSite)
+	authorized.GET("/sites/:id/nginx-config", siteHandler.GetNginxConfig)
+	authorized.PUT("/sites/:id/nginx-config", siteHandler.UpdateNginxConfig)
 
 	authorized.GET("/services", serviceHandler.GetServices)
 	authorized.GET("/services/:id", serviceHandler.GetServiceByID)

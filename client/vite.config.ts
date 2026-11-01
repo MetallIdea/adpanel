@@ -9,6 +9,8 @@ export default defineConfig({
     outFileName:'frontend.zip'
   })],
  server: {
+    port: process.env.PORT? Number(process.env.PORT) : 3125,
+  
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

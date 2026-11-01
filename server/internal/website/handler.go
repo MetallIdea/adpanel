@@ -8,11 +8,15 @@ import (
 )
 
 type Handler struct {
-	repo *Repository
+	repo        *Repository
+	nginxService *NginxConfigService
 }
 
-func NewHandler(repo *Repository) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(repo *Repository, nginxService *NginxConfigService) *Handler {
+	return &Handler{
+		repo:         repo,
+		nginxService: nginxService,
+	}
 }
 
 func (h *Handler) GetSites(c *gin.Context) {
@@ -72,9 +76,37 @@ func (h *Handler) CreateSite(c *gin.Context) {
 		return
 	}
 
+	if site.Name == "" {
+		c.JSON(400, gin.H{"error": "name is required"})
+		return
+	}
+
+	if site.URL == "" {
+		c.JSON(400, gin.H{"error": "url is required"})
+		return
+	}
+
+	if !isValidStatus(site.Status) {
+		c.JSON(400, gin.H{"error": "invalid status. Allowed values: active, inactive, pending"})
+		return
+	}
+
+	if site.Port == 0 {
+		site.Port = 8080
+	}
+
+	// Generate default nginx config
+	nginxConfig := generateDefaultNginxConfig(site.URL, site.Port)
+
 	err := h.repo.Create(c, &site)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Write nginx config to file
+	if err := h.nginxService.CreateConfig(site.ID, nginxConfig); err != nil {
+		c.JSON(500, gin.H{"error": "site created but failed to write nginx config: " + err.Error()})
 		return
 	}
 

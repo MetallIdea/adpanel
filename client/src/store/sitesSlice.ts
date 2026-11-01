@@ -4,6 +4,7 @@ export type Site = {
   id: number
   name: string
   url: string
+  port: number
   status: 'active' | 'inactive' | 'pending'
   visits: number
 }
