@@ -205,6 +205,7 @@ func (h *Handler) UploadFile(c *gin.Context) {
 		})
 		return
 	}
+	defer file.Close()
 
 	// Формируем полный путь к файлу.
 	// safeName — только basename, без path separators, поэтому filepath.Join
