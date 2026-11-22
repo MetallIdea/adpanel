@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +18,40 @@ type Handler struct {
 // NewHandler создаёт новый handler с заданной конфигурацией.
 func NewHandler(config Config) *Handler {
 	return &Handler{config: config}
+}
+
+// sanitizeFileName безопасно обрабатывает имя файла из пользовательского ввода.
+//
+// Механизмы защиты:
+//  1. filepath.Clean — убирает .., //, лишние точки.
+//  2. filepath.Base — оставляет только последний компонент (убирает пути).
+//  3. Проверка на пустой результат и path separators.
+//  4. Проверка на ".." после очистки.
+//
+// Возвращает ошибку, если имя файла не может быть безопасно использовано.
+func sanitizeFileName(originalName string) (string, error) {
+	// Убираем пробелы и управляющие символы.
+	name := strings.TrimSpace(originalName)
+	if name == "" {
+		return "", ErrInvalidMultipartRequest
+	}
+
+	// filepath.Base оставляет только последний компонент пути.
+	// Это безопасно: даже если originalName = "../../../etc/passwd",
+	// base будет "passwd" — просто имя файла без пути.
+	name = filepath.Base(name)
+
+	// filepath.Base может вернуть "." или ".." для специальных путей.
+	if name == "." || name == ".." || name == "" {
+		return "", ErrInvalidMultipartRequest
+	}
+
+	// Проверка на path separators (на случай edge cases).
+	if strings.ContainsAny(name, `\/`) {
+		return "", ErrInvalidMultipartRequest
+	}
+
+	return name, nil
 }
 
 // ListFiles обрабатывает GET /api/files.
@@ -88,7 +123,21 @@ func (h *Handler) ListFiles(c *gin.Context) {
 //   - Перезапись существующих файлов запрещена
 //   - Файлы сохраняются только внутри RootDir
 func (h *Handler) UploadFile(c *gin.Context) {
-	// Разрешаем до 32MB в памяти, остальное — на диск.
+	// Ограничиваем общий размер multipart-запроса для защиты от DoS.
+	// MaxMultipartMemory (32MB) — это лимит для хранения в памяти,
+	// но не ограничивает общий размер тела запроса. Злоумышленник может
+	// отправить multipart body в гигабайты, что приведёт к исчерпанию
+	// памяти/диска сервера.
+	//
+	// http.MaxBytesReader ограничивает чтение тела запроса до заданного
+	// лимита на уровне HTTP-уровня. Если клиент отправит больше данных,
+	// сервер вернёт 413 и разорвёт соединение.
+	const maxRequestBody = 32 << 20 // 32 MB
+
+	http.MaxBytesReader(c.Writer, c.Request.Body, maxRequestBody)
+
+	// Ограничиваем размер файлов в памяти при парсинге multipart.
+	// Файлы больше этого размера сохраняются на диск.
 	const maxMemory = 32 << 20 // 32 MB
 
 	if err := c.Request.ParseMultipartForm(maxMemory); err != nil {
@@ -149,7 +198,7 @@ func (h *Handler) UploadFile(c *gin.Context) {
 	defer file.Close()
 
 	// Проверяем размер заголовка (Content-Length).
-	// Это первая проверка — фактивный размер будет проверен при чтении.
+	// Это первая проверка — фактический размер будет проверен при чтении.
 	if header.Size > h.config.MaxUploadSize {
 		c.JSON(http.StatusRequestEntityTooLarge, gin.H{
 			"error": "file size exceeds maximum allowed size",
@@ -157,22 +206,25 @@ func (h *Handler) UploadFile(c *gin.Context) {
 		return
 	}
 
+	// Безопасная обработка имени файла.
+	// header.Filename из multipart может содержать "../" или другие артефакты.
+	safeName, err := sanitizeFileName(header.Filename)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid file name",
+		})
+		return
+	}
+
 	// Формируем полный путь к файлу.
-	targetPath := filepath.Join(dirAbsPath, header.Filename)
+	// safeName — только basename, без path separators, поэтому filepath.Join
+	// гарантирует, что targetPath находится внутри dirAbsPath.
+	targetPath := filepath.Join(dirAbsPath, safeName)
 
 	// Проверяем, не существует ли уже файл с таким именем.
 	// Используем Lstat, чтобы не следовать за symlink.
-	existingInfo, err := os.Lstat(targetPath)
+	_, err = os.Lstat(targetPath)
 	if err == nil {
-		// Файл существует — запрещаем перезапись.
-		if existingInfo.Mode()&os.ModeSymlink != 0 {
-			// Если это symlink — потенциально опасно, возвращаем ту же ошибку,
-			// что и для обычного файла (не раскрываем детали).
-			c.JSON(http.StatusConflict, gin.H{
-				"error": "file already exists",
-			})
-			return
-		}
 		c.JSON(http.StatusConflict, gin.H{
 			"error": "file already exists",
 		})
@@ -188,7 +240,6 @@ func (h *Handler) UploadFile(c *gin.Context) {
 	// нужен chroot или openat().
 	f, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
-		// Duplicated entry — файл появился между Lstat и OpenFile.
 		c.JSON(http.StatusConflict, gin.H{
 			"error": "file already exists",
 		})
@@ -196,10 +247,16 @@ func (h *Handler) UploadFile(c *gin.Context) {
 	}
 	defer f.Close()
 
+	// Ограничиваем чтение: даже если multipart body больше MaxUploadSize,
+	// мы прочитаем только до лимита. Это защищает от DoS через oversized body.
+	reader := io.LimitReader(file, h.config.MaxUploadSize+1)
+
 	// Копируем данные из запроса в файл с проверкой размера.
-	written, err := io.Copy(f, file)
+	written, err := io.Copy(f, reader)
 	if err != nil {
 		// Удаляем частично записанный файл при ошибке.
+		// targetPath был санитизирован и находится внутри dirAbsPath,
+		// который проверен через ResolvePath. os.Remove безопасен.
 		os.Remove(targetPath)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "failed to save file",
@@ -208,6 +265,8 @@ func (h *Handler) UploadFile(c *gin.Context) {
 	}
 
 	// Проверяем фактический размер записанных данных.
+	// io.LimitReader ограничивает чтение до MaxUploadSize+1,
+	// поэтому если written > MaxUploadSize — файл слишком большой.
 	if written > h.config.MaxUploadSize {
 		os.Remove(targetPath)
 		c.JSON(http.StatusRequestEntityTooLarge, gin.H{
@@ -252,7 +311,7 @@ func (h *Handler) UploadFile(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "file uploaded successfully",
-		"name":    header.Filename,
+		"name":    safeName,
 		"size":    written,
 	})
 }

@@ -65,5 +65,8 @@ func parseSize(s string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("invalid size value %q: %w", s, err)
 	}
+	if n < 0 {
+		return 0, fmt.Errorf("size value must be non-negative, got %d", n)
+	}
 	return n * multiplier, nil
 }
