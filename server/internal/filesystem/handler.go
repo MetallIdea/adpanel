@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,38 +19,15 @@ func NewHandler(config Config) *Handler {
 	return &Handler{config: config}
 }
 
-// sanitizeFileName безопасно обрабатывает имя файла из пользовательского ввода.
-//
-// Механизмы защиты:
-//  1. filepath.Clean — убирает .., //, лишние точки.
-//  2. filepath.Base — оставляет только последний компонент (убирает пути).
-//  3. Проверка на пустой результат и path separators.
-//  4. Проверка на ".." после очистки.
-//
-// Возвращает ошибку, если имя файла не может быть безопасно использовано.
-func sanitizeFileName(originalName string) (string, error) {
-	// Убираем пробелы и управляющие символы.
-	name := strings.TrimSpace(originalName)
-	if name == "" {
-		return "", ErrInvalidMultipartRequest
-	}
+// ListFilesResponse — ответ на запрос списка файлов.
+type ListFilesResponse struct {
+	Files []FileBrief `json:"files"`
+}
 
-	// filepath.Base оставляет только последний компонент пути.
-	// Это безопасно: даже если originalName = "../../../etc/passwd",
-	// base будет "passwd" — просто имя файла без пути.
-	name = filepath.Base(name)
-
-	// filepath.Base может вернуть "." или ".." для специальных путей.
-	if name == "." || name == ".." || name == "" {
-		return "", ErrInvalidMultipartRequest
-	}
-
-	// Проверка на path separators (на случай edge cases).
-	if strings.ContainsAny(name, `\/`) {
-		return "", ErrInvalidMultipartRequest
-	}
-
-	return name, nil
+// FileBrief — краткая информация о файле (только name и type).
+type FileBrief struct {
+	Name string     `json:"name"`
+	Type FileType   `json:"type"`
 }
 
 // ListFiles обрабатывает GET /api/files.
@@ -59,7 +35,8 @@ func sanitizeFileName(originalName string) (string, error) {
 // Query parameters:
 //   - path — относительный путь внутри корневой директории (по умолчанию: "").
 //
-// Возвращает список файлов и директорий в запрошенной папке.
+// Возвращает список файлов и директорий в запрошенной папке,
+// завернутый в объект с полем "files".
 func (h *Handler) ListFiles(c *gin.Context) {
 	requestedPath := c.Query("path")
 
@@ -101,7 +78,7 @@ func (h *Handler) ListFiles(c *gin.Context) {
 	}
 
 	// Перечисляем содержимое.
-	files, err := h.config.ListDir(absPath)
+	fileList, err := h.config.ListDir(absPath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "failed to read directory",
@@ -109,7 +86,16 @@ func (h *Handler) ListFiles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, files)
+	// Формируем ответ только с name и type.
+	files := make([]FileBrief, 0, len(fileList))
+	for _, f := range fileList {
+		files = append(files, FileBrief{
+			Name: f.Name,
+			Type: f.Type,
+		})
+	}
+
+	c.JSON(http.StatusOK, ListFilesResponse{Files: files})
 }
 
 // UploadFile обрабатывает POST /api/files/upload.
@@ -117,10 +103,11 @@ func (h *Handler) ListFiles(c *gin.Context) {
 // Ожидаемый multipart/form-data:
 //   - file — файл для загрузки (обязательный)
 //   - path — относительный путь внутри корневой директории (по умолчанию: "")
+//   - overwrite — "true" для разрешения перезаписи существующего файла
 //
 // Ограничения:
 //   - Максимальный размер файла: MAX_UPLOAD_SIZE (по умолчанию 100MB)
-//   - Перезапись существующих файлов запрещена
+//   - Перезапись существующих файлов запрещена (если overwrite не указан)
 //   - Файлы сохраняются только внутри RootDir
 func (h *Handler) UploadFile(c *gin.Context) {
 	// Ограничиваем общий размер multipart-запроса для защиты от DoS.
@@ -213,12 +200,25 @@ func (h *Handler) UploadFile(c *gin.Context) {
 
 	// Проверяем, не существует ли уже файл с таким именем.
 	// Используем Lstat, чтобы не следовать за symlink.
-	_, err = os.Lstat(targetPath)
+	existingInfo, err := os.Lstat(targetPath)
 	if err == nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": "file already exists",
-		})
-		return
+		// Файл существует — проверяем параметр overwrite.
+		overwrite := c.Query("overwrite") == "true" || c.PostForm("overwrite") == "true"
+		if !overwrite {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "file already exists",
+			})
+			return
+		}
+		// Overwrite разрешён — удаляем существующий файл.
+		if existingInfo.Mode()&os.ModeSymlink != 0 {
+			// Не перезаписываем symlink — это небезопасно.
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "cannot overwrite symbolic link",
+			})
+			return
+		}
+		os.Remove(targetPath)
 	}
 
 	// Создаём файл с O_EXCL — атомарная операция "создать или ошибка".
