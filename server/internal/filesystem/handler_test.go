@@ -53,17 +53,18 @@ func TestListFiles_Success(t *testing.T) {
 		return
 	}
 
-	var files []FileInfo
-	if err := json.Unmarshal(w.Body.Bytes(), &files); err != nil {
+	// Новый формат: ответ обернут в объект с полем "files".
+	var resp ListFilesResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("invalid JSON: %v", err)
 	}
 
-	if len(files) < 2 {
-		t.Errorf("expected at least 2 files, got %d", len(files))
+	if len(resp.Files) < 2 {
+		t.Errorf("expected at least 2 files, got %d", len(resp.Files))
 	}
 
 	typeMap := make(map[string]FileType)
-	for _, f := range files {
+	for _, f := range resp.Files {
 		typeMap[f.Name] = f.Type
 	}
 
@@ -132,13 +133,14 @@ func TestListFiles_SubDirectory(t *testing.T) {
 		return
 	}
 
-	var files []FileInfo
-	if err := json.Unmarshal(w.Body.Bytes(), &files); err != nil {
+	// Новый формат: ответ обернут в объект с полем "files".
+	var resp ListFilesResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("invalid JSON: %v", err)
 	}
 
-	if len(files) != 1 || files[0].Name != "file2.txt" {
-		t.Errorf("expected [file2.txt], got %v", files)
+	if len(resp.Files) != 1 || resp.Files[0].Name != "file2.txt" {
+		t.Errorf("expected [file2.txt], got %v", resp.Files)
 	}
 }
 
@@ -192,6 +194,75 @@ func TestUploadFile_Overwrite(t *testing.T) {
 	content, _ := os.ReadFile(filepath.Join(tmpDir, "file1.txt"))
 	if string(content) != "hello" {
 		t.Errorf("file content = %q, want %q", string(content), "hello")
+	}
+}
+
+func TestUploadFile_OverwriteParam(t *testing.T) {
+	_, r, tmpDir := setupTestHandler(t)
+
+	// Загружаем файл с overwrite=true — должен перезаписать.
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormFile("file", "file1.txt")
+	part.Write([]byte("overwritten content"))
+	writer.WriteField("overwrite", "true")
+	writer.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/files/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusCreated)
+		return
+	}
+
+	// Проверяем, что файл перезаписан.
+	content, err := os.ReadFile(filepath.Join(tmpDir, "file1.txt"))
+	if err != nil {
+		t.Fatalf("file not found: %v", err)
+	}
+	if string(content) != "overwritten content" {
+		t.Errorf("content = %q, want %q", string(content), "overwritten content")
+	}
+}
+
+func TestUploadFile_OverwriteSymlink(t *testing.T) {
+	tmpDir := t.TempDir()
+	otherDir := t.TempDir()
+
+	cfg := Config{
+		RootDir:       tmpDir,
+		MaxUploadSize: 1024,
+	}
+	handler := NewHandler(cfg)
+
+	// Создаём symlink внутри RootDir.
+	symlinkPath := filepath.Join(tmpDir, "link")
+	if err := os.Symlink(otherDir, symlinkPath); err != nil {
+		t.Skipf("symlink creation failed: %v", err)
+	}
+
+	r := gin.New()
+	r.POST("/files/upload", handler.UploadFile)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormFile("file", "test.txt")
+	part.Write([]byte("test"))
+	writer.WriteField("path", "link")
+	writer.WriteField("overwrite", "true")
+	writer.Close()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/files/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	r.ServeHTTP(w, req)
+
+	// Запрещаем перезапись symlink — это небезопасно.
+	if w.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusForbidden)
 	}
 }
 
