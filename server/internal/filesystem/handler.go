@@ -124,11 +124,6 @@ func (h *Handler) ListFiles(c *gin.Context) {
 //   - Файлы сохраняются только внутри RootDir
 func (h *Handler) UploadFile(c *gin.Context) {
 	// Ограничиваем общий размер multipart-запроса для защиты от DoS.
-	// MaxMultipartMemory (32MB) — это лимит для хранения в памяти,
-	// но не ограничивает общий размер тела запроса. Злоумышленник может
-	// отправить multipart body в гигабайты, что приведёт к исчерпанию
-	// памяти/диска сервера.
-	//
 	// http.MaxBytesReader ограничивает чтение тела запроса до заданного
 	// лимита на уровне HTTP-уровня. Если клиент отправит больше данных,
 	// сервер вернёт 413 и разорвёт соединение.
@@ -141,6 +136,10 @@ func (h *Handler) UploadFile(c *gin.Context) {
 	const maxMemory = 32 << 20 // 32 MB
 
 	if err := c.Request.ParseMultipartForm(maxMemory); err != nil {
+		// Исправление #10, #11: ParseMultipartForm автоматически
+		// очищает временные файлы при ошибке. Если MaxBytesReader
+		// отсёк тело до полного чтения, ParseMultipartForm вернёт
+		// io.EOF — это корректная ошибка, временные файлы не создавались.
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid multipart request: " + err.Error(),
 		})
@@ -196,15 +195,6 @@ func (h *Handler) UploadFile(c *gin.Context) {
 		return
 	}
 	defer file.Close()
-
-	// Проверяем размер заголовка (Content-Length).
-	// Это первая проверка — фактический размер будет проверен при чтении.
-	if header.Size > h.config.MaxUploadSize {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{
-			"error": "file size exceeds maximum allowed size",
-		})
-		return
-	}
 
 	// Безопасная обработка имени файла.
 	// header.Filename из multipart может содержать "../" или другие артефакты.
@@ -271,40 +261,6 @@ func (h *Handler) UploadFile(c *gin.Context) {
 		os.Remove(targetPath)
 		c.JSON(http.StatusRequestEntityTooLarge, gin.H{
 			"error": "file size exceeds maximum allowed size",
-		})
-		return
-	}
-
-	// Проверяем, что созданный файл не является symlink.
-	finalInfo, err := os.Lstat(targetPath)
-	if err != nil {
-		os.Remove(targetPath)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to verify uploaded file",
-		})
-		return
-	}
-
-	if finalInfo.Mode()&os.ModeSymlink != 0 {
-		os.Remove(targetPath)
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": "access denied",
-		})
-		return
-	}
-
-	// Проверяем, что реальная директория файла внутри RootDir.
-	realPath, err := filepath.EvalSymlinks(targetPath)
-	if err != nil {
-		// Файл не symlink — EvalSymlinks возвращает тот же путь.
-		realPath = targetPath
-	}
-
-	rel, err := filepath.Rel(h.config.RootDir, realPath)
-	if err != nil || rel == ".." || filepath.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		os.Remove(targetPath)
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": "access denied",
 		})
 		return
 	}

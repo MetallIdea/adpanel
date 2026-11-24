@@ -27,6 +27,11 @@ func (c Config) ResolvePath(requestedPath string) (string, error) {
 		if err != nil || rel == ".." || filepath.HasPrefix(rel, ".."+string(filepath.Separator)) {
 			return "", ErrPathTraversal
 		}
+		// Исправление #7: проверяем symlink даже для абсолютных путей.
+		// Без этой проверки symlink внутри RootDir мог бы вести за пределы.
+		if err := c.verifySymlinkSafety(cleaned); err != nil {
+			return "", err
+		}
 		return cleaned, nil
 	}
 
@@ -124,6 +129,12 @@ func (c Config) ListDir(absPath string) ([]FileInfo, error) {
 		return nil, err
 	}
 
+	// Вычисляем родительский путь для навигации фронтенда.
+	parentPath := filepath.Base(absPath)
+	if parentPath == "" || parentPath == "." {
+		parentPath = "/"
+	}
+
 	var files []FileInfo
 	for _, entry := range entries {
 		info, err := entry.Info()
@@ -132,11 +143,12 @@ func (c Config) ListDir(absPath string) ([]FileInfo, error) {
 		}
 
 		fileInfo := FileInfo{
-			Name:      entry.Name(),
-			Type:      func() FileType { if entry.IsDir() { return FileTypeFolder }; return FileTypeFile }(),
-			Size:      info.Size(),
-			Path:      sanitizePathForDisplay(absPath, entry.Name()),
-			CreatedAt: info.ModTime(),
+			Name:       entry.Name(),
+			Type:       func() FileType { if entry.IsDir() { return FileTypeFolder }; return FileTypeFile }(),
+			Size:       info.Size(),
+			Path:       sanitizePathForDisplay(absPath, entry.Name()),
+			ParentPath: parentPath,
+			CreatedAt:  info.ModTime(),
 		}
 		files = append(files, fileInfo)
 	}

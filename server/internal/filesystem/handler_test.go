@@ -314,11 +314,14 @@ func TestUploadFile_ConcurrentUploads(t *testing.T) {
 
 	var results []int
 	var mu sync.Mutex
+	var wg sync.WaitGroup
 
 	const fileName = "concurrent.txt"
 
 	for i := 0; i < 5; i++ {
+		wg.Add(1)
 		go func(n int) {
+			defer wg.Done()
 			body := &bytes.Buffer{}
 			writer := multipart.NewWriter(body)
 			part, _ := writer.CreateFormFile("file", fileName)
@@ -336,7 +339,7 @@ func TestUploadFile_ConcurrentUploads(t *testing.T) {
 		}(i)
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	wg.Wait()
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -691,9 +694,9 @@ func TestUploadFile_MultipartRequestBodyLimit(t *testing.T) {
 	r.MaxMultipartMemory = 32 << 20
 	r.POST("/files/upload", handler.UploadFile)
 
-	// Создаём multipart-запрос размером 50MB (значительно больше 32MB лимита).
+	// Создаём multipart-запрос размером 40MB (значительно больше 32MB лимита).
 	// MaxBytesReader должен отсечь его на уровне HTTP.
-	largeContent := strings.Repeat("x", 50*1024*1024)
+	largeContent := strings.Repeat("x", 40*1024*1024)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)

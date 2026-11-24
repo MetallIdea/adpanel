@@ -6,8 +6,8 @@ import "time"
 type FileType string
 
 const (
-	FileTypeFile    FileType = "file"
-	FileTypeFolder   FileType = "folder"
+	FileTypeFile   FileType = "file"
+	FileTypeFolder FileType = "folder"
 )
 
 // FileInfo содержит информацию о файле или директории.
@@ -16,5 +16,6 @@ type FileInfo struct {
 	Type      FileType  `json:"type"`
 	Size      int64     `json:"size"`
 	Path      string    `json:"path"`
+	ParentPath string   `json:"parent_path"`
 	CreatedAt time.Time `json:"created_at"`
 }

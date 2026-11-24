@@ -50,6 +50,10 @@ func TestParseSize(t *testing.T) {
 		{"", 0, true},
 		{"abc", 0, true},
 		{"-1", 0, true},
+		{"K", 0, true},       // суффикс без цифры
+		{"M", 0, true},       // суффикс без цифры
+		{"100X", 0, true},    // неизвестный суффикс
+		{"1.5M", 0, true},    // дробное число
 	}
 
 	for _, tt := range tests {

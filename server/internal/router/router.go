@@ -9,6 +9,7 @@ import (
 	"github.com/MetallIdea/adpanel/server/internal/auth"
 	"github.com/MetallIdea/adpanel/server/internal/command"
 	"github.com/MetallIdea/adpanel/server/internal/db"
+	"github.com/MetallIdea/adpanel/server/internal/filesystem"
 	"github.com/MetallIdea/adpanel/server/internal/server"
 	"github.com/MetallIdea/adpanel/server/internal/webservice"
 	"github.com/MetallIdea/adpanel/server/internal/website"
@@ -93,6 +94,10 @@ func SetupRouter() *gin.Engine {
 
 	serverHandler := server.NewHandler()
 
+	// Initialize filesystem handler.
+	filesystemConfig := filesystem.DefaultConfig()
+	filesystemHandler := filesystem.NewHandler(filesystemConfig)
+
 	r := gin.Default()
 
 	authorized := r.Group("/api")
@@ -113,6 +118,9 @@ func SetupRouter() *gin.Engine {
 	authorized.POST("/services", serviceHandler.CreateService)
 	authorized.PUT("/services/:id", serviceHandler.UpdateService)
 	authorized.DELETE("/services/:id", serviceHandler.DeleteService)
+
+	authorized.GET("/files", filesystemHandler.ListFiles)
+	authorized.POST("/files/upload", filesystemHandler.UploadFile)
 
 	r.POST("/api/login", authHandler.Login)
 
