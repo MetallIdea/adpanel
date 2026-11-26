@@ -32,6 +32,7 @@ Thumbs.db
 
 # Build cache
 cache/
+tmp/
 
 # Go clean cache
 go-build/
