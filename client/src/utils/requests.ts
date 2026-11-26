@@ -5,6 +5,10 @@ interface RequestOptions extends RequestInit {
 }
 
 async function checkResponse(response: Response) {
+  if (response.status === 401) {
+    window.location.href = '/login'
+    return response
+  }
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.message || `HTTP error! status: ${response.status}`)

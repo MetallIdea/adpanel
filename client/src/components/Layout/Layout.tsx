@@ -18,6 +18,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       command: () => navigate('/sites'),
     },
     {
+      label: 'Сервисы',
+      icon: 'pi pi-cog',
+      command: () => navigate('/services'),
+    },
+    {
       label: 'Файлы',
       icon: 'pi pi-file',
       command: () => navigate('/files'),

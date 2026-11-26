@@ -7,16 +7,16 @@ export const sitesApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: API_BASE_URL }),
   endpoints: (builder) => ({
     getSites: builder.query<Site[], void>({
-      query: () => '/api/sites',
+      query: () => '/sites',
       providesTags: ['Site'],
     }),
     getSiteById: builder.query<Site, number>({
-      query: (id) => `/api/sites/${id}`,
+      query: (id) => `/sites/${id}`,
       providesTags: ['Site'],
     }),
     addSite: builder.mutation<Site, Omit<Site, 'id' | 'visits'>>({
       query: (site) => ({
-        url: '/api/sites',
+        url: '/sites',
         method: 'POST',
         body: site,
       }),
@@ -24,30 +24,30 @@ export const sitesApi = createApi({
     }),
     updateSite: builder.mutation<Site, Site>({
       query: (site) => ({
-        url: `/api/sites/${site.id}`,
+        url: `/sites/${site.id}`,
         method: 'PUT',
         body: site,
       }),
       invalidatesTags: ['Site'],
     }),
     getNginxConfig: builder.query<{ nginx_config: string }, number>({
-      query: (id) => `/api/sites/${id}/nginx-config`,
+      query: (id) => `/sites/${id}/nginx-config`,
     }),
     updateNginxConfig: builder.mutation<{ message: string }, { id: number; nginx_config: string }>({
       query: ({ id, nginx_config }) => ({
-        url: `/api/sites/${id}/nginx-config`,
+        url: `/sites/${id}/nginx-config`,
         method: 'PUT',
         body: { nginx_config },
       }),
       invalidatesTags: ['Site'],
     }),
     getSiteServices: builder.query<any[], number>({
-      query: (id) => `/api/sites/${id}/services`,
+      query: (id) => `/sites/${id}/services`,
       providesTags: ['Site'],
     }),
     updateSiteServices: builder.mutation<{ message: string }, { id: number; services: any[] }>({
       query: ({ id, services }) => ({
-        url: `/api/sites/${id}/services`,
+        url: `/sites/${id}/services`,
         method: 'PUT',
         body: services,
       }),
