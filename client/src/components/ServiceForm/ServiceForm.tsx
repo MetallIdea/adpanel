@@ -8,7 +8,7 @@ import { Button } from 'primereact/button'
 import { useGetSitesQuery } from '../../services/sitesApi'
 
 export type ServiceFormValues = {
-  site_id: number
+  site_id: number | null
   name: string
   port: number
   working_dir: string
@@ -22,7 +22,7 @@ type ServiceFormProps = {
   onSubmit: (values: ServiceFormValues & { path?: string }) => void
   onCancel: () => void
   loading?: boolean
-  initialSiteId?: number
+  initialSiteId?: number | null
 }
 
 const validationSchema = Yup.object({
@@ -67,9 +67,9 @@ function FormField({
           <InputText
             id={name}
             type={type}
-            value={String(field[name])}
+            value={field[name] ?? ''}
             onChange={(e: any) => {
-              const val = type === 'number' ? parseInt(e.target.value, 10) : e.target.value
+              const val = type === 'number' ? (e.target.value === '' ? 0 : parseInt(e.target.value, 10)) : e.target.value
               form.setFieldValue(name, val)
             }}
             className="w-full"
@@ -104,13 +104,14 @@ function FormDropdown({
           </label>
           <Dropdown
             id={name}
-            value={field[name] as number}
+            value={field[name] && field[name] !== 0 ? field[name] : undefined}
             options={options}
             optionLabel="label"
             optionValue="value"
             onChange={(e: any) => form.setFieldValue(name, e.value)}
             className="w-full"
-            placeholder="Выберите..."
+            placeholder="Выберите сайт..."
+            emptyMessage="Нет доступных сайтов"
           />
           <ErrorMessage
             name={name}
@@ -140,7 +141,7 @@ function FormTextArea({
           </label>
           <InputTextarea
             id={name}
-            value={field[name] as string}
+            value={field[name] ?? ''}
             onChange={(e: any) => form.setFieldValue(name, e.target.value)}
             className="w-full"
             rows={4}
@@ -161,6 +162,8 @@ export function ServiceForm({ onSubmit, onCancel, loading = false, initialSiteId
   const handleSubmit = (values: ServiceFormValues & { path?: string }, helpers: FormikHelpers<ServiceFormValues & { path?: string }>) => {
     const formattedValues: ServiceFormValues = {
       ...values,
+      site_id: values.site_id ?? 0,
+      port: values.port ?? 3000,
       path: values.path || '/',
     }
     onSubmit(formattedValues)
@@ -178,7 +181,7 @@ export function ServiceForm({ onSubmit, onCancel, loading = false, initialSiteId
     <Card title="Создание сервиса" className="max-w-2xl mx-auto">
       <Formik
         initialValues={{
-          site_id: initialSiteId || 0,
+          site_id: initialSiteId ?? null,
           name: '',
           port: 3000,
           working_dir: '',

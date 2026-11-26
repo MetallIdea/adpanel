@@ -121,6 +121,9 @@ func SetupRouter() *gin.Engine {
 
 	authorized.GET("/files", filesystemHandler.ListFiles)
 	authorized.POST("/files/upload", filesystemHandler.UploadFile)
+	authorized.DELETE("/files/:path", filesystemHandler.DeleteFile)
+	authorized.POST("/files/mkdir", filesystemHandler.CreateDirectory)
+	authorized.GET("/files/breadcrumb", filesystemHandler.GetBreadcrumb)
 
 	r.POST("/api/login", authHandler.Login)
 

@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -270,5 +271,109 @@ func (h *Handler) UploadFile(c *gin.Context) {
 		"message": "file uploaded successfully",
 		"name":    safeName,
 		"size":    written,
+	})
+}
+
+// parsePath нормализует путь из query параметров.
+func parsePath(p string) string {
+	if p == "" || p == "/" {
+		return ""
+	}
+	p = strings.TrimPrefix(p, "/")
+	return filepath.Clean(p)
+}
+
+// formatSize форматирует размер файла в читаемый вид.
+func formatSize(size int64) string {
+	const (
+		KB = 1024
+		MB = KB * 1024
+		GB = MB * 1024
+	)
+
+	switch {
+	case size >= GB:
+		return fmt.Sprintf("%.2f GB", float64(size)/GB)
+	case size >= MB:
+		return fmt.Sprintf("%.2f MB", float64(size)/MB)
+	case size >= KB:
+		return fmt.Sprintf("%.2f KB", float64(size)/KB)
+	default:
+		return fmt.Sprintf("%d B", size)
+	}
+}
+
+// DeleteFile обрабатывает DELETE /api/files/:path.
+func (h *Handler) DeleteFile(c *gin.Context) {
+	path := c.Param("path")
+	if path == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "path is required",
+		})
+		return
+	}
+
+	absPath, err := h.config.ResolvePath(path)
+	if err != nil {
+		if err == ErrPathTraversal || err == ErrSymlinkTraversal {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "access denied",
+			})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid path",
+		})
+		return
+	}
+
+	if err := os.RemoveAll(absPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "deleted successfully"})
+}
+
+// CreateDirectory обрабатывает POST /api/files/mkdir.
+func (h *Handler) CreateDirectory(c *gin.Context) {
+	var req struct {
+		Path string `json:"path" binding:"required"`
+		Name string `json:"name" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	dirPath := filepath.Join(req.Path, req.Name)
+	absPath, err := h.config.ResolvePath(dirPath)
+	if err != nil {
+		if err == ErrPathTraversal || err == ErrSymlinkTraversal {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "access denied",
+			})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid path",
+		})
+		return
+	}
+
+	if err := os.MkdirAll(absPath, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "directory created",
+		"path":    filepath.Join(req.Path, req.Name),
 	})
 }

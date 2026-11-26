@@ -10,7 +10,7 @@ export default function CreateService() {
   const [addService, { isLoading, isSuccess, isError, error }] = useAddServiceMutation()
   const toast = useRef<Toast>(null)
 
-  const initialSiteId = searchParams.get('site_id') ? parseInt(searchParams.get('site_id')!, 10) : undefined
+  const initialSiteId = searchParams.get('site_id') ? parseInt(searchParams.get('site_id')!, 10) : null
 
   const showToast = (severity: 'success' | 'error', message: string) => {
     if (toast.current) {
@@ -39,7 +39,15 @@ export default function CreateService() {
   }, [isSuccess, isError, error, navigate])
 
   const handleSuccess = (values: ServiceFormValues) => {
-    addService(values)
+    addService({
+      site_id: values.site_id ?? 0,
+      name: values.name,
+      port: values.port,
+      working_dir: values.working_dir,
+      startup_cmd: values.startup_cmd,
+      env_content: values.env_content,
+      comment: values.comment,
+    })
   }
 
   return (

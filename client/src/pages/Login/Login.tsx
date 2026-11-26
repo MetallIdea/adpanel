@@ -1,6 +1,7 @@
 import { Formik, Form, Field, type FormikHelpers } from 'formik'
 import * as yup from 'yup'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { login } from '../../services/authApi'
 import styles from './Login.module.css'
 
@@ -12,13 +13,14 @@ interface LoginFormValues {
 const validationSchema = yup.object({
   login: yup
     .string()
-    .required('Email обязателен'),
+    .required('Логин обязателен'),
   password: yup
     .string()
     .required('Пароль обязателен'),
 })
 
 export default function Login() {
+  const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -31,7 +33,7 @@ export default function Login() {
 
     try {
       await login(values)
-      // TODO: redirect after successful login
+      navigate('/')
       helpers.resetForm()
     } catch (err: unknown) {
       if (err instanceof Error) {
